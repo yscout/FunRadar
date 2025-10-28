@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IntroScreen } from './components/IntroScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
@@ -16,6 +16,10 @@ export interface UserData {
   availableTimes?: string[];
   budget?: string;
   locationPermission?: boolean;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface EventData {
@@ -35,7 +39,14 @@ export interface FriendPreference {
 }
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('intro');
+  // Initialize screen from URL hash or default to 'intro'
+  const getScreenFromHash = (): Screen => {
+    const hash = window.location.hash.slice(1);
+    const validScreens: Screen[] = ['intro', 'onboarding', 'home', 'createEvent', 'friendsSubmission', 'groupMatch'];
+    return validScreens.includes(hash as Screen) ? (hash as Screen) : 'intro';
+  };
+
+  const [currentScreen, setCurrentScreen] = useState<Screen>(getScreenFromHash());
   const [userData, setUserData] = useState<UserData>({
     name: '',
     interests: [],
@@ -48,8 +59,21 @@ function App() {
   const [currentFriendIndex, setCurrentFriendIndex] = useState(0);
   const [invitedFriends, setInvitedFriends] = useState<string[]>([]);
 
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const screen = getScreenFromHash();
+      setCurrentScreen(screen);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const navigateToScreen = (screen: Screen) => {
     setCurrentScreen(screen);
+    // Update URL hash without triggering a page reload
+    window.history.pushState({ screen }, '', `#${screen}`);
   };
 
   const handleCreateEventComplete = (data: EventData) => {

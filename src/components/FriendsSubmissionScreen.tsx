@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -55,6 +55,15 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
   const [budgetRange, setBudgetRange] = useState<[number, number]>([20, 80]);
   const [ideas, setIdeas] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  // Reset form state whenever the friend name changes (new friend)
+  useEffect(() => {
+    setSelectedActivities([]);
+    setSelectedTimeSlots([]);
+    setBudgetRange([20, 80]);
+    setIdeas('');
+    setSubmitted(false);
+  }, [friendName]);
 
   const toggleActivity = (activity: string) => {
     setSelectedActivities((prev) =>

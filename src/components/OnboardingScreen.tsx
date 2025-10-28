@@ -13,6 +13,7 @@ interface OnboardingScreenProps {
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const handleNameContinue = () => {
     if (name.trim()) {
@@ -20,11 +21,60 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     }
   };
 
-  const handleLocationPermission = (granted: boolean) => {
-    onComplete({
-      name,
-      locationPermission: granted,
-    });
+  const handleLocationPermission = async (granted: boolean) => {
+    if (!granted) {
+      // User chose "Not Now"
+      onComplete({
+        name,
+        locationPermission: false,
+      });
+      return;
+    }
+
+    // Try to get actual location
+    if (!navigator.geolocation) {
+      // Browser doesn't support geolocation
+      onComplete({
+        name,
+        locationPermission: false,
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      });
+
+      // Successfully got location
+      onComplete({
+        name,
+        locationPermission: true,
+        location: {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        },
+      });
+    } catch (error) {
+      // User denied permission or location unavailable
+      console.log('Location error:', error);
+      onComplete({
+        name,
+        locationPermission: false,
+      });
+    } finally {
+      setIsGettingLocation(false);
+    }
   };
 
   return (
@@ -106,16 +156,18 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               <div className="space-y-3 md:space-y-4">
                 <Button
                   onClick={() => handleLocationPermission(true)}
-                  className="w-full h-14 md:h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 md:text-lg"
+                  disabled={isGettingLocation}
+                  className="w-full h-14 md:h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 md:text-lg disabled:opacity-50"
                   size="lg"
                 >
-                  Allow Access
+                  {isGettingLocation ? 'Getting location...' : 'Allow Access'}
                 </Button>
                 
                 <Button
                   onClick={() => handleLocationPermission(false)}
+                  disabled={isGettingLocation}
                   variant="outline"
-                  className="w-full h-14 md:h-16 rounded-2xl md:text-lg"
+                  className="w-full h-14 md:h-16 rounded-2xl md:text-lg disabled:opacity-50"
                   size="lg"
                 >
                   Not Now
