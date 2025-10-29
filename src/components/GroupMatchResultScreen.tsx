@@ -15,7 +15,6 @@ import {
 import {
   Sparkles,
   Calendar,
-  Share2,
   Users,
   MapPin,
   DollarSign,
@@ -444,24 +443,6 @@ export function GroupMatchResultScreen({
             <Users className="w-5 h-5 md:w-6 md:h-6 mr-2" />
             Everyone's Preferences
           </Button>
-
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            <Button
-              onClick={() => setShowPreferencesDialog(true)}
-              variant="outline"
-              className="rounded-2xl md:h-12 md:text-base"
-            >
-              <Users className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-              Everyone's Preferences
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-2xl md:h-12 md:text-base"
-            >
-              <Share2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-              Share to Group Chat
-            </Button>
-          </div>
 
           <Button
             onClick={onBackToHome}
