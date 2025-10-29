@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -135,15 +134,9 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
-          <AnimatePresence mode="wait">
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 md:space-y-8"
-              >
+          {step === 1 && (
+              <div key="step1"
+                className="space-y-6 md:space-y-8">
                 <div className="text-center mb-6">
                   <div className="text-4xl md:text-5xl mb-3 md:mb-4">📅</div>
                   <h3 className="mb-2 md:text-3xl">When works for you?</h3>
@@ -186,17 +179,12 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 md:space-y-8"
-              >
+              <div key="step2"
+                className="space-y-6 md:space-y-8">
                 <div className="text-center mb-6">
                   <div className="text-4xl md:text-5xl mb-3 md:mb-4">🎯</div>
                   <h3 className="mb-2 md:text-3xl">What's the vibe?</h3>
@@ -243,17 +231,12 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
 
             {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 md:space-y-8"
-              >
+              <div key="step3"
+                className="space-y-6 md:space-y-8">
                 <div className="text-center mb-6">
                   <div className="text-4xl md:text-5xl mb-3 md:mb-4">💰</div>
                   <h3 className="mb-2 md:text-3xl">What's your budget?</h3>
@@ -306,17 +289,12 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                     <div className="text-xs md:text-sm">Premium</div>
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 md:space-y-8"
-              >
+              <div key="step4"
+                className="space-y-6 md:space-y-8">
                 <div className="text-center mb-6">
                   <div className="text-4xl md:text-5xl mb-3 md:mb-4">📝</div>
                   <h3 className="mb-2 md:text-3xl">Any specific ideas?</h3>
@@ -333,17 +311,12 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                     className="mt-1.5 min-h-40 md:min-h-48 md:text-lg"
                   />
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {step === 5 && (
-              <motion.div
-                key="step5"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 md:space-y-8"
-              >
+              <div key="step5"
+                className="space-y-6 md:space-y-8">
                 <div className="text-center mb-6">
                   <div className="text-4xl md:text-5xl mb-3 md:mb-4">👥</div>
                   <h3 className="mb-2 md:text-3xl">Invite your crew</h3>
@@ -358,12 +331,12 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                       onChange={(e) => setEmailInput(e.target.value)}
                       placeholder="Enter friend's email"
                       className="flex-1 h-12 md:h-14 px-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none md:text-lg"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleEmailAdd();
-                        }
-                      }}
-                    />
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleEmailAdd();
+                          }
+                        }}
+                      />
                     <Button
                       onClick={handleEmailAdd}
                       className="h-12 md:h-14 px-6 rounded-xl bg-purple-500 hover:bg-purple-600"
@@ -421,10 +394,9 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
       </div>
 
       {/* Footer */}

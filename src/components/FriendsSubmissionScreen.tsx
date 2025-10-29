@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -106,12 +105,8 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
   if (submitted) {
     return (
       <div className="h-full min-h-[700px] md:min-h-[800px] bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 flex flex-col items-center justify-center p-8 md:p-16">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', duration: 0.6 }}
-          className="text-center"
-        >
+        <div
+          className="text-center">
           <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center mb-6 md:mb-8 mx-auto shadow-lg">
             <Check className="w-12 h-12 md:w-16 md:h-16 text-green-500" />
           </div>
@@ -119,7 +114,7 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
           <p className="text-white/90 text-lg md:text-xl">
             Gathering everyone's vibes...
           </p>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -127,11 +122,8 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl"
-      >
+      <div
+        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-6 md:mb-8">
             <div className="text-5xl md:text-6xl mb-3 md:mb-4">🎉</div>
@@ -139,17 +131,13 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
             <p className="text-white/90 md:text-lg">Help plan the perfect hangout</p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-6 md:space-y-8"
-          >
+          <div
+            className="space-y-6 md:space-y-8">
             {/* Activities */}
             <div>
               <h3 className="mb-3 md:mb-4 md:text-2xl">What activities interest you?</h3>
@@ -275,7 +263,7 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
                 className="min-h-32 md:min-h-40 md:text-lg"
               />
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { Star } from 'lucide-react';
 
 interface StarRatingProps {
@@ -37,13 +36,12 @@ export function StarRating({
           {[1, 2, 3, 4, 5].map((star) => {
             const isActive = star <= (hoveredStar || userRating);
             return (
-              <motion.button
+              <button
                 key={star}
                 onClick={() => handleClick(star)}
                 onMouseEnter={() => !disabled && setHoveredStar(star)}
                 onMouseLeave={() => setHoveredStar(0)}
                 disabled={disabled}
-                whileTap={{ scale: disabled ? 1 : 0.9 }}
                 className={`transition-all ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
               >
                 <Star
@@ -53,7 +51,7 @@ export function StarRating({
                       : 'fill-none text-gray-300'
                   } ${!disabled && 'hover:scale-110'}`}
                 />
-              </motion.button>
+              </button>
             );
           })}
         </div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -211,11 +210,8 @@ export function EventDetailsScreen({
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl"
-      >
+      <div
+        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto">
           <Button
             onClick={onBack}
@@ -226,14 +222,10 @@ export function EventDetailsScreen({
           </Button>
           
           <div className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.2 }}
-              className="text-5xl md:text-6xl mb-3 md:mb-4"
-            >
+            <div
+              className="text-5xl md:text-6xl mb-3 md:mb-4">
               🎉
-            </motion.div>
+            </div>
             <h2 className="text-white mb-2 md:text-3xl">
               {eventTitle}
             </h2>
@@ -242,26 +234,18 @@ export function EventDetailsScreen({
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
-              >
+          <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {matchResults.map((match, index) => (
-                  <motion.div
-                    key={match.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                  <div key={match.id}
                     className={
                       index === 0 ? "md:col-span-2" : ""
-                    }
-                  >
+                    }>
                     <Card
                       className={`overflow-hidden border-2 h-full ${
                         index === 0
@@ -418,19 +402,15 @@ export function EventDetailsScreen({
                         </div>
                       </div>
                     </Card>
-                  </motion.div>
+                  </div>
                 ))}
-          </motion.div>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="p-6 md:p-8 pt-2 border-t border-gray-100"
-      >
+      <div
+        className="p-6 md:p-8 pt-2 border-t border-gray-100">
         <div className="max-w-6xl mx-auto space-y-3 md:space-y-4">
           <Button 
             onClick={() => setShowPreferencesDialog(true)}
@@ -459,7 +439,7 @@ export function EventDetailsScreen({
           </div>
 
         </div>
-      </motion.div>
+      </div>
 
       {/* Preferences Dialog */}
       <Dialog open={showPreferencesDialog} onOpenChange={setShowPreferencesDialog}>

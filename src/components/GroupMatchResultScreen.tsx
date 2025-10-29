@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -215,57 +214,28 @@ export function GroupMatchResultScreen({
   if (isLoading) {
     return (
       <div className="h-full min-h-[700px] md:min-h-[800px] bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 flex flex-col items-center justify-center p-8 md:p-16">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="mb-8"
-        >
+        <div
+          className="mb-8">
           <Sparkles className="w-16 h-16 md:w-20 md:h-20 text-white" />
-        </motion.div>
+        </div>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-white text-center mb-3 md:text-4xl"
-        >
+        <h2
+          className="text-white text-center mb-3 md:text-4xl">
           Gathering your group's vibe...
-        </motion.h2>
+        </h2>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-white/90 text-center md:text-xl"
-        >
+        <p
+          className="text-white/90 text-center md:text-xl">
           Finding perfect matches ✨
-        </motion.p>
+        </p>
 
-        <motion.div
-          className="mt-8 flex gap-2 md:gap-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
+        <div className="mt-8 flex gap-2 md:gap-3">
           {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
+            <div key={i}
               className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-full"
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
             />
           ))}
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -273,20 +243,13 @@ export function GroupMatchResultScreen({
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl"
-      >
+      <div
+        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-            className="text-5xl md:text-6xl mb-3 md:mb-4"
-          >
+          <div
+            className="text-5xl md:text-6xl mb-3 md:mb-4">
             🎉
-          </motion.div>
+          </div>
           <h2 className="text-white mb-2 md:text-3xl">
             We found your matches!
           </h2>
@@ -294,28 +257,19 @@ export function GroupMatchResultScreen({
             Top 5 activities based on everyone's preferences
           </p>
         </div>
-      </motion.div>
+      </div>
 
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <AnimatePresence>
-            {showResults && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
-              >
+          {showResults && (
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {matchResults.map((match, index) => (
-                  <motion.div
-                    key={match.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                  <div key={match.id}
                     className={
                       index === 0 ? "md:col-span-2" : ""
-                    }
-                  >
+                    }>
                     <Card
                       className={`overflow-hidden border-2 h-full ${
                         index === 0
@@ -472,21 +426,16 @@ export function GroupMatchResultScreen({
                         </div>
                       </div>
                     </Card>
-                  </motion.div>
+                  </div>
                 ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
       </div>
 
       {/* Footer */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="p-6 md:p-8 pt-2 border-t border-gray-100"
-      >
+      <div
+        className="p-6 md:p-8 pt-2 border-t border-gray-100">
         <div className="max-w-6xl mx-auto space-y-3 md:space-y-4">
           <Button 
             onClick={() => setShowPreferencesDialog(true)}
@@ -522,7 +471,7 @@ export function GroupMatchResultScreen({
             Back to Home
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Preferences Dialog */}
       <Dialog open={showPreferencesDialog} onOpenChange={setShowPreferencesDialog}>

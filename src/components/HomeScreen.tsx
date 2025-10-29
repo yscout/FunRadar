@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -38,11 +37,8 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl"
-      >
+      <div
+        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="flex items-center gap-3 md:gap-4">
@@ -58,12 +54,8 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
             </div>
           </div>
 
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="max-w-2xl mx-auto"
-          >
+          <div
+            className="max-w-2xl mx-auto">
             <Button
               onClick={onCreateEvent}
               className="w-full h-14 md:h-16 bg-white text-purple-600 hover:bg-white/90 rounded-2xl shadow-lg md:text-lg"
@@ -72,18 +64,14 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
               <Plus className="w-5 h-5 md:w-6 md:h-6 mr-2" />
               Start a New Event
             </Button>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
+          <div>
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h3 className="md:text-2xl">Upcoming Events</h3>
               <Badge variant="secondary" className="rounded-full md:text-base md:px-4 md:py-1">
@@ -94,12 +82,7 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
             {upcomingEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {upcomingEvents.map((event, index) => (
-                  <motion.div
-                    key={event.id}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 + index * 0.1 }}
-                  >
+                  <div key={event.id}>
                     <Card
                       className="p-4 md:p-5 border-2 hover:border-purple-300 transition-colors cursor-pointer"
                       onClick={() => {
@@ -147,7 +130,7 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
                         </div>
                       </div>
                     </Card>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -163,7 +146,7 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
                 </Button>
               </Card>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
 

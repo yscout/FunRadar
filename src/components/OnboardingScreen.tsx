@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -94,15 +93,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       <div className="flex-1 px-6 md:px-8 py-8 md:py-12 overflow-y-auto flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          {step === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="w-full max-w-md md:max-w-lg"
-            >
+        {step === 1 && (
+            <div key="step1"
+              className="w-full max-w-md md:max-w-lg">
               <div className="text-center mb-8 md:mb-12">
                 <h2 className="mb-3 md:text-4xl">What's your name?</h2>
                 <p className="text-gray-600 md:text-lg">Let's get to know you</p>
@@ -126,26 +119,17 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   />
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="w-full max-w-md md:max-w-lg"
-            >
+            <div
+              className="w-full max-w-md md:max-w-lg">
               <div className="text-center mb-8 md:mb-12">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', delay: 0.1 }}
-                  className="inline-flex items-center justify-center w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full mb-6 md:mb-8"
-                >
+                <div
+                  className="inline-flex items-center justify-center w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full mb-6 md:mb-8">
                   <MapPin className="w-10 h-10 md:w-14 md:h-14 text-white" />
-                </motion.div>
+                </div>
                 
                 <h2 className="mb-3 md:text-4xl">Enable Location</h2>
                 <p className="text-gray-600 md:text-lg">
@@ -177,10 +161,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               <p className="text-center text-sm md:text-base text-gray-500 mt-6 md:mt-8">
                 You can change this later in settings
               </p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-      </div>
+        </div>
 
       {step === 1 && (
         <div className="p-6 md:p-8 pt-2">

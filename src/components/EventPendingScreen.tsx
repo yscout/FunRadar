@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -36,11 +35,8 @@ export function EventPendingScreen({
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl"
-      >
+      <div
+        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto">
           <Button
             onClick={onBack}
@@ -52,21 +48,17 @@ export function EventPendingScreen({
           </Button>
           
           <div className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', delay: 0.2 }}
-              className="text-5xl md:text-6xl mb-3 md:mb-4"
-            >
+            <div
+              className="text-5xl md:text-6xl mb-3 md:mb-4">
               ⏳
-            </motion.div>
+            </div>
             <h2 className="text-white mb-2 md:text-3xl">{eventTitle}</h2>
             <p className="text-white/90 md:text-lg">
               Waiting for everyone to share their preferences
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Progress Section */}
       <div className="p-6 md:p-8 bg-gradient-to-br from-purple-50 to-pink-50">
@@ -104,12 +96,7 @@ export function EventPendingScreen({
           
           <div className="space-y-3">
             {participants.map((participant, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+              <div key={index}>
                 <Card className="p-4 md:p-6 border-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-4">
@@ -137,7 +124,7 @@ export function EventPendingScreen({
                     )}
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
