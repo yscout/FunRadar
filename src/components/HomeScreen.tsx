@@ -10,25 +10,27 @@ import type { UserData } from '../App';
 interface HomeScreenProps {
   userData: UserData;
   onCreateEvent: () => void;
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: string, data?: any) => void;
 }
 
 const upcomingEvents = [
   {
     id: 1,
-    title: 'Coffee Catch-up',
+    title: 'Weekend Hangout',
     date: 'Tomorrow, 10:00 AM',
     participants: 4,
-    location: 'Downtown Cafe',
-    emoji: '☕',
+    location: 'Various',
+    emoji: '🎉',
+    status: 'completed', // Shows results
   },
   {
     id: 2,
     title: 'Movie Night',
     date: 'Fri, 7:00 PM',
-    participants: 6,
+    participants: 5,
     location: 'Cinema Plaza',
     emoji: '🎬',
+    status: 'pending', // Shows pending state
   },
 ];
 
@@ -98,13 +100,34 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
                   >
-                    <Card className="p-4 md:p-5 border-2 hover:border-purple-300 transition-colors cursor-pointer">
+                    <Card
+                      className="p-4 md:p-5 border-2 hover:border-purple-300 transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (event.status === 'completed') {
+                          onNavigate('eventDetails', event);
+                        } else if (event.status === 'pending') {
+                          onNavigate('eventPending', event);
+                        }
+                      }}
+                    >
                       <div className="flex gap-4">
                         <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center text-2xl md:text-3xl flex-shrink-0">
                           {event.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="mb-1 md:text-lg">{event.title}</div>
+                          <div className="mb-1 md:text-lg flex items-center justify-between">
+                            {event.title}
+                            {event.status === 'completed' && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                Complete
+                              </Badge>
+                            )}
+                            {event.status === 'pending' && (
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                                In Progress
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-3 text-sm md:text-base text-gray-500">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />

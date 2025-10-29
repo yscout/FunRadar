@@ -5,8 +5,10 @@ import { HomeScreen } from './components/HomeScreen';
 import { CreateEventScreen } from './components/CreateEventScreen';
 import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { GroupMatchResultScreen } from './components/GroupMatchResultScreen';
+import { EventDetailsScreen } from './components/EventDetailsScreen';
+import { EventPendingScreen } from './components/EventPendingScreen';
 
-type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'friendsSubmission' | 'groupMatch';
+type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'friendsSubmission' | 'groupMatch' | 'eventDetails' | 'eventPending';
 
 export interface UserData {
   name: string;
@@ -58,6 +60,119 @@ function App() {
   const [friendPreferences, setFriendPreferences] = useState<FriendPreference[]>([]);
   const [currentFriendIndex, setCurrentFriendIndex] = useState(0);
   const [invitedFriends, setInvitedFriends] = useState<string[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+  // Sample data for completed event
+  const sampleCompletedEventData = {
+    matchResults: [
+      {
+        id: 1,
+        title: "Free Jazz Picnic",
+        compatibility: 95,
+        image: "https://images.unsplash.com/photo-1603543900250-275a638755a9",
+        location: "Central Park",
+        price: "$15/person",
+        time: "Saturday, 3:00 PM",
+        emoji: "🎶",
+        votes: 4,
+        description: "Live jazz band with picnic setup and food trucks",
+        groupRatings: [5, 4, 5, 4],
+        ratedCount: 4,
+      },
+      {
+        id: 2,
+        title: "Rooftop Dinner",
+        compatibility: 88,
+        image: "https://images.unsplash.com/photo-1742002661612-771125d0c050?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb29mdG9wJTIwZGlubmVyJTIwY2l0eXxlbnwxfHx8fDE3NjEyMzU0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+        location: "Downtown Skybar",
+        price: "$45/person",
+        time: "Friday, 7:00 PM",
+        emoji: "🍽️",
+        votes: 4,
+        description: "Italian cuisine with city views",
+        groupRatings: [4, 3, 5, 4],
+        ratedCount: 4,
+      },
+      {
+        id: 3,
+        title: "Coffee & Catch Up",
+        compatibility: 85,
+        image: "https://images.unsplash.com/photo-1721845706930-b3a05aa70baa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBzaG9wJTIwZnJpZW5kc3xlbnwxfHx8fDE3NjExNzkzMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+        location: "The Brew House",
+        price: "$8/person",
+        time: "Sunday, 10:00 AM",
+        emoji: "☕",
+        votes: 4,
+        description: "Cozy cafe with board games",
+        groupRatings: [4, 5, 3, 4],
+        ratedCount: 4,
+      },
+    ],
+    allPreferences: [
+      {
+        name: "Alex (You)",
+        availableTimes: ["Sat 3:00 PM", "Sat 4:00 PM", "Sun 10:00 AM", "Sun 2:00 PM"],
+        activities: ["Picnic", "Coffee", "Dinner"],
+        budgetRange: [15, 60] as [number, number],
+        ideas: "Love outdoor activities and good food",
+      },
+      {
+        name: "Sam",
+        availableTimes: ["Sat 2:00 PM", "Sat 3:00 PM", "Sat 7:00 PM"],
+        activities: ["Picnic", "Dinner", "Coffee"],
+        budgetRange: [20, 70] as [number, number],
+        ideas: "Something casual and fun",
+      },
+      {
+        name: "Jordan",
+        availableTimes: ["Sat 3:00 PM", "Sat 4:00 PM", "Sun 10:00 AM"],
+        activities: ["Coffee", "Picnic", "Dinner"],
+        budgetRange: [10, 50] as [number, number],
+        ideas: "Prefer something affordable",
+      },
+      {
+        name: "Taylor",
+        availableTimes: ["Sat 2:00 PM", "Sat 7:00 PM", "Sun 2:00 PM"],
+        activities: ["Dinner", "Picnic"],
+        budgetRange: [25, 80] as [number, number],
+        ideas: "Really into food experiences",
+      },
+    ],
+  };
+
+  // Sample data for pending event
+  const samplePendingEventData = {
+    participants: [
+      { name: "Alex (You)", submitted: true },
+      { name: "Sam", submitted: true },
+      { name: "Jordan", submitted: false },
+      { name: "Taylor", submitted: false },
+      { name: "Morgan", submitted: true },
+    ],
+    submittedPreferences: [
+      {
+        name: "Alex (You)",
+        availableTimes: ["Fri 7:00 PM", "Sat 7:00 PM"],
+        activities: ["Movie", "Dinner"],
+        budgetRange: [12, 45] as [number, number],
+        ideas: "Love action movies and pizza",
+      },
+      {
+        name: "Sam",
+        availableTimes: ["Fri 7:00 PM", "Fri 8:00 PM"],
+        activities: ["Movie", "Dinner"],
+        budgetRange: [15, 50] as [number, number],
+        ideas: "Comedy or thriller movies",
+      },
+      {
+        name: "Morgan",
+        availableTimes: ["Fri 7:00 PM", "Sat 7:00 PM", "Sat 8:00 PM"],
+        activities: ["Movie"],
+        budgetRange: [10, 35] as [number, number],
+        ideas: "Any movie is fine",
+      },
+    ],
+  };
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -135,7 +250,14 @@ function App() {
           <HomeScreen
             userData={userData}
             onCreateEvent={() => navigateToScreen('createEvent')}
-            onNavigate={(screen) => navigateToScreen(screen as Screen)}
+            onNavigate={(screen, data) => {
+              if (screen === 'eventDetails' || screen === 'eventPending') {
+                setSelectedEvent(data);
+                navigateToScreen(screen as Screen);
+              } else {
+                navigateToScreen(screen as Screen);
+              }
+            }}
           />
         )}
         {currentScreen === 'createEvent' && (
@@ -156,6 +278,25 @@ function App() {
           <GroupMatchResultScreen
             onBackToHome={() => navigateToScreen('home')}
             allPreferences={getAllPreferences()}
+          />
+        )}
+        {currentScreen === 'eventDetails' && (
+          <EventDetailsScreen
+            eventId={selectedEvent?.id || 1}
+            eventTitle={selectedEvent?.title || 'Event'}
+            onBack={() => navigateToScreen('home')}
+            allPreferences={sampleCompletedEventData.allPreferences}
+            matchResults={sampleCompletedEventData.matchResults}
+          />
+        )}
+        {currentScreen === 'eventPending' && (
+          <EventPendingScreen
+            eventId={2}
+            eventTitle="Movie Night"
+            organizerName={userData.name}
+            participants={samplePendingEventData.participants}
+            submittedPreferences={samplePendingEventData.submittedPreferences}
+            onBack={() => navigateToScreen('home')}
           />
         )}
       </div>
