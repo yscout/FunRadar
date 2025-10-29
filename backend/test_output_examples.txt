@@ -1,0 +1,118 @@
+====================================================================
+EXAMPLE TEST OUTPUTS WITH PERCENTAGE STATISTICS
+====================================================================
+
+1. RSPEC OUTPUT EXAMPLE
+====================================================================
+
+$ bundle exec rspec
+
+Randomized with seed 12345
+
+Event
+  validations
+    should validate presence of name
+    should validate presence of description
+    should validate presence of location
+    should validate presence of event_date
+  associations
+    should have many invitations dependent => destroy
+    should have many invited_users
+    should have many preferences
+    should have many activity_suggestions
+  ... (continues with all test descriptions)
+
+Finished in 2.34 seconds (files took 0.67 seconds to load)
+141 examples, 0 failures
+
+================================================================================
+Test Results: 141/141 passed (100.0%)
+================================================================================
+
+
+2. CUCUMBER OUTPUT EXAMPLE
+====================================================================
+
+$ bundle exec cucumber
+
+Using the default profile...
+.....F.....F.............F.....F..........F............F.F
+
+Failing Scenarios:
+cucumber features/ai_matching.feature:15 # Scenario: Multiple users submit preferences
+cucumber features/ai_matching.feature:25 # Scenario: AI generates activity suggestions
+... (failure details)
+
+53 scenarios (25 passed, 28 failed)
+265 steps (212 passed, 28 failed, 25 skipped)
+1m23.456s
+
+================================================================================
+Scenario Results: 25/53 passed (47.17%)
+================================================================================
+
+
+3. COMBINED RUN EXAMPLE
+====================================================================
+
+$ bundle exec rspec && bundle exec cucumber
+
+# RSpec runs first...
+Finished in 2.34 seconds
+141 examples, 0 failures
+
+================================================================================
+Test Results: 141/141 passed (100.0%)
+================================================================================
+
+# Then Cucumber runs...
+53 scenarios (25 passed, 28 failed)
+265 steps (212 passed, 28 failed, 25 skipped)
+1m23.456s
+
+================================================================================
+Scenario Results: 25/53 passed (47.17%)
+================================================================================
+
+
+4. PARTIAL FAILURES EXAMPLE (RSpec)
+====================================================================
+
+$ bundle exec rspec
+
+Finished in 3.12 seconds
+141 examples, 5 failures, 2 pending
+
+================================================================================
+Test Results: 134/141 passed (95.04%)
+================================================================================
+
+
+5. USING ALTERNATIVE FORMATTERS
+====================================================================
+
+$ bundle exec rspec --format progress
+
+.........F.....................................
+...............................................
+..................................
+
+Finished in 2.34 seconds
+141 examples, 1 failure
+
+# Note: No custom percentage output when using other formatters
+
+$ bundle exec cucumber --format pretty
+
+Feature: Create Event
+  As a user
+  I want to create an event
+  So that I can invite friends
+  
+  Scenario: User creates a new event
+    Given I am logged in as "John"
+    When I create an event with name "Beach Day"
+    Then the event should be created
+    
+# Note: No custom percentage output when using other formatters
+

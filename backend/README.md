@@ -1,24 +1,42 @@
-# README
+# FunRadar Backend
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails API backend for FunRadar - An intelligent event planning and group activity matching application.
 
-Things you may want to cover:
+## Testing
 
-* Ruby version
+This project includes comprehensive test coverage with custom formatters that display pass percentages.
 
-* System dependencies
+### Quick Start
 
-* Configuration
+```bash
+# Run all RSpec tests (141 examples)
+bundle exec rspec
 
-* Database creation
+# Run all Cucumber scenarios (53 scenarios)
+bundle exec cucumber
 
-* Database initialization
+# Run everything
+bundle exec rspec && bundle exec cucumber
+```
 
-* How to run the test suite
+### Test Output with Percentages
 
-* Services (job queues, cache servers, search engines, etc.)
+Both RSpec and Cucumber tests now display results with percentages:
 
-* Deployment instructions
+**RSpec Output:**
+```
+================================================================================
+Test Results: 141/141 passed (100.0%)
+================================================================================
+```
 
-* ...
+**Cucumber Output:**
+```
+================================================================================
+Scenario Results: 25/53 passed (47.17%)
+================================================================================
+```
+
+For detailed testing documentation, see [TESTING.md](TESTING.md)
+
+For formatter implementation details, see [TEST_FORMATTER_README.md](TEST_FORMATTER_README.md)

@@ -30,7 +30,10 @@ bundle exec rspec spec/models/user_spec.rb:15
 
 ### Output Formats
 ```bash
-# Progress format (default, dots)
+# Custom format with percentage stats (default)
+bundle exec rspec
+
+# Progress format (dots)
 bundle exec rspec --format progress
 
 # Documentation format (detailed, readable)
@@ -38,6 +41,13 @@ bundle exec rspec --format documentation
 
 # With failure details
 bundle exec rspec --format documentation --fail-fast
+```
+
+**Note:** The default RSpec configuration now includes a custom formatter that displays test results with percentages at the end:
+```
+================================================================================
+Test Results: 141/141 passed (100.0%)
+================================================================================
 ```
 
 ### Run Tests by Tag
@@ -65,14 +75,21 @@ bundle exec cucumber features/create_event.feature:9
 
 ### Output Formats
 ```bash
-# Progress format (default)
-bundle exec cucumber --format progress
+# Custom progress format with percentage stats (default)
+bundle exec cucumber
 
 # Pretty format (detailed)
 bundle exec cucumber --format pretty
 
 # Show only failures
 bundle exec cucumber --format pretty --strict
+```
+
+**Note:** The default Cucumber configuration now includes a custom formatter that displays scenario results with percentages at the end:
+```
+================================================================================
+Scenario Results: 25/53 passed (47.17%)
+================================================================================
 ```
 
 ## Test Structure
