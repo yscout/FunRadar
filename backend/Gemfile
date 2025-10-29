@@ -77,6 +77,8 @@ group :test do
   gem "database_cleaner-active_record", "~> 2.1"
   
   # RSpec matchers and helpers
+  gem "simplecov", "~> 0.22", require: false
+  gem "simplecov-console", "~> 0.9", require: false
   gem "shoulda-matchers", "~> 6.0"
   gem "webmock", "~> 3.19"
   gem "vcr", "~> 6.2"

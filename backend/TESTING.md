@@ -114,6 +114,8 @@ spec/
 ├── requests/          # API integration tests
 │   └── api/
 │       ├── events_spec.rb
+        ├── user_spec.rb
+        ├── session_spec.rb
 │       ├── invitations_spec.rb
 │       └── preferences_spec.rb
 └── support/           # Test helpers
@@ -141,7 +143,7 @@ features/
 
 ## Test Coverage
 
-### RSpec (141 examples, 100% passing)
+### RSpec (148 examples, 100% passing)
 - **Model Tests**: 90 examples
   - User: 16 tests
   - Event: 30 tests
@@ -151,10 +153,12 @@ features/
 - **Service Tests**: 15 examples
   - AI::GroupMatchService: 15 tests
   
-- **Request Tests**: 36 examples
+- **Request Tests**: 43 examples
   - Events API: 19 tests
   - Invitations API: 6 tests
   - Preferences API: 11 tests
+  - User API: 4 tests
+  - Session API: 3 tests
 
 ### Cucumber (53 scenarios, 47% core features passing)
 - Create Event: 9 scenarios
