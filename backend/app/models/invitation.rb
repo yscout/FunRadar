@@ -50,7 +50,8 @@ class Invitation < ApplicationRecord
       status: status,
       name: display_name,
       responded_at: responded_at,
-      event_id: event_id
+      event_id: event_id,
+      invitee_id: invitee_id
     }
     data[:access_token] = access_token if include_token
     data[:preference] = preference&.to_api

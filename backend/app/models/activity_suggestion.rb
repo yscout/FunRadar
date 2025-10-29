@@ -12,7 +12,6 @@ class ActivitySuggestion < ApplicationRecord
   def to_api
     {
       created_at: created_at,
-      model_name: model_name,
       matches: matches
     }
   end
