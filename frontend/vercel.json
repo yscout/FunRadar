@@ -1,0 +1,12 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "build",
+    "installCommand": "npm install",
+    "rewrites": [
+      {
+        "source": "/api/:path*",
+        "destination": "https://2cfc75ff25af.ngrok-free.app/api/:path*"
+      }
+    ]
+  }
+  
