@@ -7,6 +7,7 @@ import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { GroupMatchResultScreen } from './components/GroupMatchResultScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
+import { createSession, listEvents, createEvent as apiCreateEvent, fetchEventProgress, type ApiEvent } from './api';
 
 type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'friendsSubmission' | 'groupMatch' | 'eventDetails' | 'eventPending';
 
@@ -61,6 +62,8 @@ function App() {
   const [currentFriendIndex, setCurrentFriendIndex] = useState(0);
   const [invitedFriends, setInvitedFriends] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [events, setEvents] = useState<ApiEvent[]>([]);
 
   // Sample data for completed event
   const sampleCompletedEventData = {
@@ -242,13 +245,22 @@ function App() {
           <OnboardingScreen
             onComplete={(data) => {
               setUserData(data);
-              navigateToScreen('home');
+              createSession(data.name)
+                .then((res) => {
+                  setUserId(res.user.id);
+                  setEvents(res.organized_events || []);
+                  navigateToScreen('home');
+                })
+                .catch(() => {
+                  navigateToScreen('home');
+                });
             }}
           />
         )}
         {currentScreen === 'home' && (
           <HomeScreen
             userData={userData}
+            events={events}
             onCreateEvent={() => navigateToScreen('createEvent')}
             onNavigate={(screen, data) => {
               if (screen === 'eventDetails' || screen === 'eventPending') {
@@ -262,7 +274,43 @@ function App() {
         )}
         {currentScreen === 'createEvent' && (
           <CreateEventScreen
-            onComplete={handleCreateEventComplete}
+            onComplete={async (data) => {
+              handleCreateEventComplete(data);
+              if (!userId) return;
+              try {
+                const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
+                const payload = {
+                  title,
+                  notes: data.notes,
+                  organizer_preferences: {
+                    available_times: data.availableTimes || [],
+                    activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
+                    budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
+                    budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
+                    ideas: data.notes || '',
+                  },
+                  invited_friends: data.invitedFriends || [],
+                };
+                const { event } = await apiCreateEvent(userId, payload);
+                setEvents((prev) => [event, ...prev]);
+                setSelectedEvent(event);
+                // Try to fetch progress for pending screen
+                try {
+                  const prog = await fetchEventProgress(userId, event.id);
+                  const participants = (prog.progress || []).map((p: any) => ({
+                    name: p.name,
+                    submitted: p.status === 'submitted',
+                  }));
+                  // Navigate to pending view with real data by reusing selectedEvent payload
+                  navigateToScreen('eventPending');
+                  setSelectedEvent({ ...event, participants });
+                } catch {
+                  navigateToScreen('eventPending');
+                }
+              } catch (e) {
+                // Ignore API errors for now and stay on local flow
+              }
+            }}
             onBack={() => navigateToScreen('home')}
           />
         )}
@@ -291,11 +339,11 @@ function App() {
         )}
         {currentScreen === 'eventPending' && (
           <EventPendingScreen
-            eventId={2}
-            eventTitle="Movie Night"
+            eventId={selectedEvent?.id || 0}
+            eventTitle={selectedEvent?.title || 'New Hangout'}
             organizerName={userData.name}
-            participants={samplePendingEventData.participants}
-            submittedPreferences={samplePendingEventData.submittedPreferences}
+            participants={selectedEvent?.participants || []}
+            submittedPreferences={[]}
             onBack={() => navigateToScreen('home')}
           />
         )}
