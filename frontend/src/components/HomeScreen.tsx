@@ -21,11 +21,9 @@ export function HomeScreen({ userData, events, invitations = [], isNewUser, onCr
     { id: 9001, title: 'Weekend Hangout', status: 'ready', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 4, participant_count: 4 },
     { id: 9002, title: 'Movie Night', status: 'collecting', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 1, participant_count: 5 },
   ];
-  // Show the two example events for all users except true first-time (new) users.
   const displayEvents = isNewUser ? [] : exampleEvents;
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
-      {/* Header */}
       <div
         className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto">
@@ -57,7 +55,6 @@ export function HomeScreen({ userData, events, invitations = [], isNewUser, onCr
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
           <div>
@@ -68,7 +65,6 @@ export function HomeScreen({ userData, events, invitations = [], isNewUser, onCr
               </Badge>
             </div>
 
-            {/* Invitations banner (invitees see this after onboarding) */}
             {invitations.length > 0 && (
               <div className="mb-6 space-y-3">
                 {invitations.map((inv) => (

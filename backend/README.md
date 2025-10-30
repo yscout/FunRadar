@@ -37,6 +37,6 @@ Scenario Results: 25/53 passed (47.17%)
 ================================================================================
 ```
 
-For detailed testing documentation, see [TESTING.md](TESTING.md)
+For detailed testing documentation, see [testing.md](testing.md)
 
-For formatter implementation details, see [TEST_FORMATTER_README.md](TEST_FORMATTER_README.md)
+For formatter implementation details, see [test_formatter.md](test_formatter.md)

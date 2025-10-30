@@ -143,11 +143,7 @@ function App() {
     ],
   };
 
-  // Pending sample removed
-
-  // Handle browser back/forward buttons
   useEffect(() => {
-    // Auto-restore session if we have a stored name
     const storedName = localStorage.getItem('funradar_name');
     if (storedName && !userId) {
       createSession(storedName)
@@ -157,7 +153,6 @@ function App() {
           setEvents(res.organized_events || []);
           setInvitations(res.invitations || []);
           setIsNewUser(!!res.first_time);
-          // If there is any pending invitation, open the invite response flow
           const pending = (res.invitations || []).find((i) => i.status === 'pending');
           if (pending) {
             setActiveInvitation(pending);
@@ -167,7 +162,6 @@ function App() {
           }
         })
         .catch(() => {
-          // If restore fails, clear stored and stay on current screen
           localStorage.removeItem('funradar_name');
           localStorage.removeItem('funradar_user_id');
         });
@@ -183,16 +177,12 @@ function App() {
 
   const navigateToScreen = (screen: Screen) => {
     setCurrentScreen(screen);
-    // Update URL hash without triggering a page reload
     window.history.pushState({ screen }, '', `#${screen}`);
   };
 
   const handleCreateEventComplete = (data: EventData) => {
-    // Keep event data locally if needed, but do not switch to invitee perspective
     setEventData(data);
   };
-
-  // Invitee submission helpers removed
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-sky-100 to-peach-100 flex items-center justify-center p-4 md:p-8">
@@ -207,7 +197,6 @@ function App() {
               createSession(data.name)
                 .then((res) => {
                   setUserId(res.user.id);
-                  // Persist for refresh restore
                   localStorage.setItem('funradar_name', res.user.name);
                   localStorage.setItem('funradar_user_id', String(res.user.id));
                   setEvents(res.organized_events || []);
@@ -294,12 +283,10 @@ function App() {
                   budget_max: pref.budgetRange?.[1],
                   ideas: pref.ideas,
                 }, userId);
-                // Show success, remove this invitation from list and go home
                 toast.success('Preferences submitted!');
                 setInvitations((prev) => prev.filter((i) => i.id !== activeInvitation.id));
                 navigateToScreen('home');
               } catch (e) {
-                toast.error('Failed to submit preferences');
                 navigateToScreen('home');
               }
             }}

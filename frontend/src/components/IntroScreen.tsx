@@ -10,7 +10,6 @@ export function IntroScreen({ onGetStarted }: IntroScreenProps) {
   return (
     <div
       className="h-full min-h-[700px] md:min-h-[800px] bg-gradient-to-br from-purple-400 via-pink-300 to-orange-300 flex flex-col items-center justify-center p-8 md:p-16 relative overflow-hidden">
-      {/* Decorative circles */}
       <div className="absolute top-20 left-10 w-32 h-32 md:w-48 md:h-48 bg-white/20 rounded-full blur-2xl" />
       <div className="absolute bottom-40 right-10 w-40 h-40 md:w-56 md:h-56 bg-white/20 rounded-full blur-2xl" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl" />

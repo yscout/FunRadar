@@ -22,7 +22,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   const handleLocationPermission = async (granted: boolean) => {
     if (!granted) {
-      // User chose "Not Now"
       onComplete({
         name,
         locationPermission: false,
@@ -30,9 +29,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       return;
     }
 
-    // Try to get actual location
     if (!navigator.geolocation) {
-      // Browser doesn't support geolocation
       onComplete({
         name,
         locationPermission: false,
@@ -55,7 +52,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         );
       });
 
-      // Successfully got location
       onComplete({
         name,
         locationPermission: true,
@@ -65,7 +61,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         },
       });
     } catch (error) {
-      // User denied permission or location unavailable
       console.log('Location error:', error);
       onComplete({
         name,
@@ -78,7 +73,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-gradient-to-b from-purple-50 to-white flex flex-col">
-      {/* Progress bar */}
       <div className="p-6 md:p-8 pb-2">
         <div className="flex gap-2 max-w-md mx-auto">
           {[1, 2].map((s) => (

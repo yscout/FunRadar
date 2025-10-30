@@ -114,7 +114,6 @@ const hardcodedMatchResults = [
 
 
 const formatTimeSlot = (timeSlot: string) => {
-  // Convert "Mon 9:00 AM" to "Mon 9a"
   return timeSlot.replace(' AM', 'a').replace(' PM', 'p');
 };
 
@@ -128,7 +127,6 @@ export function EventDetailsScreen({
   const [showPreferencesDialog, setShowPreferencesDialog] = useState(false);
   const totalFriends = allPreferences.length;
 
-  // Initialize ratings state
   const [ratings, setRatings] = useState<
     Record<number, MatchRating>
   >({
@@ -209,7 +207,6 @@ export function EventDetailsScreen({
 
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
-      {/* Header */}
       <div
         className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-6xl mx-auto">
@@ -236,7 +233,6 @@ export function EventDetailsScreen({
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
           <div
@@ -408,7 +404,6 @@ export function EventDetailsScreen({
         </div>
       </div>
 
-      {/* Footer */}
       <div
         className="p-6 md:p-8 pt-2 border-t border-gray-100">
         <div className="max-w-6xl mx-auto space-y-3 md:space-y-4">
@@ -441,7 +436,6 @@ export function EventDetailsScreen({
         </div>
       </div>
 
-      {/* Preferences Dialog */}
       <Dialog open={showPreferencesDialog} onOpenChange={setShowPreferencesDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
