@@ -133,7 +133,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 
                 <h2 className="mb-3 md:text-4xl">Enable Location</h2>
                 <p className="text-gray-600 md:text-lg">
-                  Allow Gather&Go to use your location to suggest nearby hangouts
+                  Allow Funradar to use your location to suggest nearby hangouts
                 </p>
               </div>
 

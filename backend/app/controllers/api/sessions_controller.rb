@@ -4,12 +4,13 @@ module Api
       name = params.require(:name).to_s.strip
       raise ActionController::ParameterMissing, "name cannot be blank" if name.blank?
 
-      user = find_or_create_user(name)
+      user, created = find_or_create_user(name)
       user.update!(last_signed_in_at: Time.current)
       user.claim_matching_invitations!
 
       render json: {
         user: user.to_api,
+        first_time: created && user.organized_events.none? && user.invitations.none?,
         invitations: user.invitations.includes(:event).map { |inv| invitation_payload(inv, include_event: true, include_token: true) },
         organized_events: user.organized_events.includes(:invitations).map { |event| event_payload(event) }
       }
@@ -18,7 +19,13 @@ module Api
     private
 
     def find_or_create_user(name)
-      User.where("lower(name) = ?", name.downcase).first_or_create!(name: name)
+      user = User.where("lower(name) = ?", name.downcase).first
+      created = false
+      unless user
+        user = User.create!(name: name)
+        created = true
+      end
+      [user, created]
     end
   end
 end

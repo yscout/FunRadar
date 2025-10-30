@@ -141,6 +141,31 @@ function App() {
 
   // Handle browser back/forward buttons
   useEffect(() => {
+    // Auto-restore session if we have a stored name
+    const storedName = localStorage.getItem('funradar_name');
+    if (storedName && !userId) {
+      createSession(storedName)
+        .then((res) => {
+          setUserId(res.user.id);
+          setUserData((prev) => ({ ...prev, name: res.user.name }));
+          setEvents(res.organized_events || []);
+          setInvitations(res.invitations || []);
+          setIsNewUser(!!res.first_time);
+          // If there is any pending invitation, open the invite response flow
+          const pending = (res.invitations || []).find((i) => i.status === 'pending');
+          if (pending) {
+            setActiveInvitation(pending);
+            navigateToScreen('inviteResponse');
+          } else {
+            navigateToScreen('home');
+          }
+        })
+        .catch(() => {
+          // If restore fails, clear stored and stay on current screen
+          localStorage.removeItem('funradar_name');
+          localStorage.removeItem('funradar_user_id');
+        });
+    }
     const handlePopState = () => {
       const screen = getScreenFromHash();
       setCurrentScreen(screen);
@@ -176,11 +201,19 @@ function App() {
               createSession(data.name)
                 .then((res) => {
                   setUserId(res.user.id);
+                  // Persist for refresh restore
+                  localStorage.setItem('funradar_name', res.user.name);
+                  localStorage.setItem('funradar_user_id', String(res.user.id));
                   setEvents(res.organized_events || []);
                   setInvitations(res.invitations || []);
-                  const hasAny = (res.organized_events && res.organized_events.length > 0) || (res.invitations && res.invitations.length > 0);
-                  setIsNewUser(!hasAny);
-                  navigateToScreen('home');
+                  setIsNewUser(!!res.first_time);
+                  const pending = (res.invitations || []).find((i) => i.status === 'pending');
+                  if (pending) {
+                    setActiveInvitation(pending);
+                    navigateToScreen('inviteResponse');
+                  } else {
+                    navigateToScreen('home');
+                  }
                 })
                 .catch(() => {
                   navigateToScreen('home');

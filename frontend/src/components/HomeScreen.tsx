@@ -17,12 +17,8 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ userData, events, invitations = [], isNewUser, onCreateEvent, onNavigate }: HomeScreenProps) {
-  const exampleEvents: ApiEvent[] = [
-    { id: 9001, title: 'Weekend Hangout', status: 'ready', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 4, participant_count: 4 },
-    { id: 9002, title: 'Movie Night', status: 'collecting', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 1, participant_count: 5 },
-  ];
-  // Show backend events when available. Only show example events for true first-time users.
-  const displayEvents = events.length > 0 ? events : (isNewUser ? exampleEvents : []);
+  // Only show real events from backend
+  const displayEvents = events;
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}

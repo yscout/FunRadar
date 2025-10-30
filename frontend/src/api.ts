@@ -17,6 +17,7 @@ export type ApiUser = {
     user: ApiUser;
   invitations: ApiInvitation[];
     organized_events: ApiEvent[];
+  first_time: boolean;
   };
 
 export type ApiInvitation = {
