@@ -52,6 +52,7 @@
   build: {
     target: 'esnext',
     outDir: '../backend/public',
+    assetsDir: 'vite-assets',
     emptyOutDir: false, // Don't delete Rails' existing public files
   },
   server: {
