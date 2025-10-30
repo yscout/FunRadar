@@ -225,7 +225,8 @@ function App() {
                       budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
                       ideas: data.notes || '',
                     },
-                    invited_friends: data.invitedFriends || [],
+                    // Always send names via invites[] so backend matches by name on login
+                    invites: (data.invitedFriends || []).map((n) => ({ name: n })),
                   };
                   const { event } = await apiCreateEvent(userId, payload);
                   setEvents((prev) => [event, ...prev]);
