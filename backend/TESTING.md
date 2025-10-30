@@ -92,55 +92,6 @@ Scenario Results: 25/53 passed (47.17%)
 ================================================================================
 ```
 
-## Test Structure
-
-### RSpec Tests
-```
-spec/
-├── factories/           # Test data factories
-│   ├── users.rb
-│   ├── events.rb
-│   ├── invitations.rb
-│   ├── preferences.rb
-│   └── activity_suggestions.rb
-├── models/             # Model unit tests
-│   ├── user_spec.rb
-│   ├── event_spec.rb
-│   ├── invitation_spec.rb
-│   └── preference_spec.rb
-├── services/           # Service tests
-│   └── ai/
-│       └── group_match_service_spec.rb
-├── requests/          # API integration tests
-│   └── api/
-│       ├── events_spec.rb
-        ├── user_spec.rb
-        ├── session_spec.rb
-│       ├── invitations_spec.rb
-│       └── preferences_spec.rb
-└── support/           # Test helpers
-    └── request_helpers.rb
-```
-
-### Cucumber Tests
-```
-features/
-├── step_definitions/   # Step implementations
-│   ├── user_steps.rb
-│   ├── event_steps.rb
-│   ├── preference_steps.rb
-│   └── ai_matching_steps.rb
-├── support/           # Cucumber setup
-│   ├── env.rb
-│   └── factory_bot.rb
-├── create_event.feature
-├── submit_preferences.feature
-├── ai_matching.feature
-├── view_events.feature
-├── user_management.feature
-└── event_collaboration.feature
-```
-
 ## Test Coverage
 
 ### RSpec (148 examples, 100% passing)
