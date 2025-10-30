@@ -1,4 +1,4 @@
-# Testing Guide for FunRadar Backend
+# Testing Results for FunRadar Backend
 
 This is a brief illustration of running RSpec/Cucumber testings and respective results.
 
