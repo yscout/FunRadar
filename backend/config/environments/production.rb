@@ -88,10 +88,11 @@ Rails.application.configure do
   #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
   # ]
   config.hosts += [
+    "funradar-b8f29a7d90f1.herokuapp.com",
+    /.*\.herokuapp\.com/,
     /.*-yukieos-projects\.vercel\.app\z/,
     /\.herokuapp\.com\z/,
     /\.ngrok-free\.app\z/
   ]
-
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
