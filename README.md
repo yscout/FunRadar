@@ -19,7 +19,7 @@ In this iteration, we designed and coded the collaboration process. In the next 
 User stories are captured as Gherkin feature files under `backend/features/`, and RSpec specs all live in `backend/spec/`
 
 
-## Running the Tests
+## Run the Tests
 
 ### Run All RSpec Tests
 ```bash
@@ -28,7 +28,7 @@ bundle install
 bundle exec rspec
 ```
 
-### Run Specific Test File
+### Run a Specific Test File
 ```bash
 bundle exec rspec spec/models/user_spec.rb
 ```
@@ -43,7 +43,7 @@ bundle exec rspec --format documentation
 bundle exec cucumber
 ```
 
-### Run Specific Feature
+### Run a Specific Feature
 ```bash
 bundle exec cucumber features/create_event.feature
 ```
@@ -52,4 +52,31 @@ bundle exec cucumber features/create_event.feature
 ```bash
 bundle exec cucumber --format pretty
 ```
+
+## Test Coverage
+
+### RSpec (148 examples, 100% passing)
+- **Model Tests**: 90 examples
+  - User: 16 tests
+  - Event: 30 tests
+  - Invitation: 24 tests
+  - Preference: 20 tests
+  
+- **Service Tests**: 15 examples
+  - AI::GroupMatchService: 15 tests
+  
+- **Request Tests**: 43 examples
+  - Events API: 19 tests
+  - Invitations API: 6 tests
+  - Preferences API: 11 tests
+  - User API: 4 tests
+  - Session API: 3 tests
+
+### Cucumber (53 scenarios, 47% core features passing)
+- Create Event: 9 scenarios
+- Submit Preferences: 13 scenarios
+- AI Matching: 14 scenarios
+- View Events: 8 scenarios
+- User Management: 5 scenarios
+- Event Collaboration: 4 scenarios
 
