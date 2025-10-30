@@ -53,4 +53,3 @@ bundle exec cucumber features/create_event.feature
 bundle exec cucumber --format pretty
 ```
 
-
