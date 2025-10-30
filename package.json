@@ -6,7 +6,7 @@
     "npm": "10.x"
   },
   "scripts": {
-    "heroku-postbuild": "npm --prefix frontend install --no-audit --no-fund && npm --prefix frontend run build",
+    "heroku-postbuild": "npm --prefix frontend install --no-audit --no-fund && cd frontend && npm run build",
     "start": "cd backend && bundle exec rails server -p $PORT"
   },
   "cacheDirectories": [
