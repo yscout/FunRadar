@@ -82,7 +82,12 @@ bundle exec cucumber --format pretty
 
 ### How our project work
 Our project is currently divided into three sections: onboarding/social matching/recommendations.
+
 First, users can type their name and share the access of their location.
-After they enter the main pages, they may see some upcoming events that have already matched with their friends(our engine will recommend these events first based on their availability/shared interests), or events that are pending(waiting invitee to accept)
+
+After they enter the main pages, they may see some upcoming events that have already matched with their friends(our engine will recommend these events first based on their availability/shared interests), or events that are pending(waiting invitee to accept).
+
 They can also start a new event with their friends by clicking "start a new event". There they will input their availbility/things they are interested in/budgets, and we will base on their current preference and saved preference to recommend them with a list of events and friends that are possibly also interested in this events, and then they can send invitations to these friends.
+
 After their friends log in and see the invitation, they can also input their preferences and rank these events. If 5 people agree with a certain event, the status will change from "pending" to "complete" and will be added to the schedule.
+
