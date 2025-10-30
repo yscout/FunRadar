@@ -16,6 +16,8 @@ In our solution, we designed the coordination process to make everyone fill in t
 
 In this iteration, we designed and coded the collaboration process. In the next iteration, we will improve the recommendation system with real data using ai agents after collecting everyone’s preferences in this friend grouhp.
 
+User stories are captured as Gherkin feature files under `backend/features/`, and RSpec specs all live in `backend/spec/`
+
 
 ## Running the Tests
 
@@ -50,4 +52,5 @@ bundle exec cucumber features/create_event.feature
 ```bash
 bundle exec cucumber --format pretty
 ```
+
 
