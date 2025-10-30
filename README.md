@@ -72,7 +72,7 @@ bundle exec cucumber --format pretty
   - User API: 4 tests
   - Session API: 3 tests
 
-### Cucumber (53 scenarios, 47% core features passing)
+### Cucumber (53 scenarios, 100% core features passing)
 - Create Event: 9 scenarios
 - Submit Preferences: 13 scenarios
 - AI Matching: 14 scenarios
