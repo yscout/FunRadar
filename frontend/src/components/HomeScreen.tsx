@@ -3,37 +3,26 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
-import { Plus, MapPin, Users, Calendar } from 'lucide-react';
+import { Plus, Users, Calendar } from 'lucide-react';
 import type { UserData } from '../App';
+import type { ApiEvent, ApiInvitation } from '../api';
 
 interface HomeScreenProps {
   userData: UserData;
+  events: ApiEvent[];
+  invitations?: ApiInvitation[];
+  isNewUser: boolean;
   onCreateEvent: () => void;
   onNavigate: (screen: string, data?: any) => void;
 }
 
-const upcomingEvents = [
-  {
-    id: 1,
-    title: 'Weekend Hangout',
-    date: 'Tomorrow, 10:00 AM',
-    participants: 4,
-    location: 'Various',
-    emoji: '🎉',
-    status: 'completed', // Shows results
-  },
-  {
-    id: 2,
-    title: 'Movie Night',
-    date: 'Fri, 7:00 PM',
-    participants: 5,
-    location: 'Cinema Plaza',
-    emoji: '🎬',
-    status: 'pending', // Shows pending state
-  },
-];
-
-export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenProps) {
+export function HomeScreen({ userData, events, invitations = [], isNewUser, onCreateEvent, onNavigate }: HomeScreenProps) {
+  const exampleEvents: ApiEvent[] = [
+    { id: 9001, title: 'Weekend Hangout', status: 'ready', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 4, participant_count: 4 },
+    { id: 9002, title: 'Movie Night', status: 'collecting', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), submitted_count: 1, participant_count: 5 },
+  ];
+  // Show the two example events for all users except true first-time (new) users.
+  const displayEvents = isNewUser ? [] : exampleEvents;
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
@@ -75,63 +64,84 @@ export function HomeScreen({ userData, onCreateEvent, onNavigate }: HomeScreenPr
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h3 className="md:text-2xl">Upcoming Events</h3>
               <Badge variant="secondary" className="rounded-full md:text-base md:px-4 md:py-1">
-                {upcomingEvents.length}
+                {displayEvents.length}
               </Badge>
             </div>
 
-            {upcomingEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                {upcomingEvents.map((event, index) => (
+            {/* Invitations banner (invitees see this after onboarding) */}
+            {invitations.length > 0 && (
+              <div className="mb-6 space-y-3">
+                {invitations.map((inv) => (
+                  <Card key={inv.id} className="p-4 md:p-5 border-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="md:text-lg truncate">{inv.event.title}</div>
+                        <div className="text-gray-500 text-sm truncate">{inv.event.organizer?.name} invites you</div>
+                      </div>
+                      <Button className="rounded-xl" onClick={() => onNavigate('inviteResponse', inv)}>
+                        Respond
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {displayEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
+                {displayEvents.map((event) => {
+                  const isReady = event.status === 'ready';
+                  const pending = !isReady;
+                  const createdAt = event.created_at ? new Date(event.created_at) : null;
+                  const dateLabel = createdAt ? createdAt.toLocaleString() : '';
+                  const participants = event.participant_count ?? 0;
+                  return (
                   <div key={event.id}>
                     <Card
                       className="p-4 md:p-5 border-2 hover:border-purple-300 transition-colors cursor-pointer"
                       onClick={() => {
-                        if (event.status === 'completed') {
+                        if (isReady) {
                           onNavigate('eventDetails', event);
-                        } else if (event.status === 'pending') {
+                        } else {
                           onNavigate('eventPending', event);
                         }
                       }}
                     >
                       <div className="flex gap-4">
-                        <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center text-2xl md:text-3xl flex-shrink-0">
-                          {event.emoji}
-                        </div>
+                        <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center text-2xl md:text-3xl flex-shrink-0">🎉</div>
                         <div className="flex-1 min-w-0">
                           <div className="mb-1 md:text-lg flex items-center justify-between">
-                            {event.title}
-                            {event.status === 'completed' && (
+                            <span className="truncate">{event.title}</span>
+                            {isReady && (
                               <Badge variant="secondary" className="bg-green-100 text-green-700">
                                 Complete
                               </Badge>
                             )}
-                            {event.status === 'pending' && (
+                            {pending && (
                               <Badge variant="secondary" className="bg-orange-100 text-orange-700">
                                 In Progress
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 text-sm md:text-base text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {event.date}
+                          {dateLabel && (
+                            <div className="flex items-center gap-3 text-sm md:text-base text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {dateLabel}
+                              </div>
                             </div>
-                          </div>
+                          )}
                           <div className="flex items-center gap-3 text-sm md:text-base text-gray-500 mt-1">
                             <div className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
-                              {event.participants} friends
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {event.location}
+                              {participants} friends
                             </div>
                           </div>
                         </div>
                       </div>
                     </Card>
                   </div>
-                ))}
+                );})}
               </div>
             ) : (
               <Card className="p-8 md:p-12 text-center border-2 border-dashed border-gray-200">

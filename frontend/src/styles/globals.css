@@ -41,7 +41,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* Custom color for Gather&Go peach tones */
+/* Custom color for Funradar peach tones */
 @theme {
   --color-peach-50: #fff5f0;
   --color-peach-100: #ffe8db;

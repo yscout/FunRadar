@@ -25,7 +25,7 @@ export function IntroScreen({ onGetStarted }: IntroScreenProps) {
         
         <h1
           className="text-white mb-3 text-4xl md:text-6xl">
-          Gather&Go
+          Funradar
         </h1>
         
         <p
