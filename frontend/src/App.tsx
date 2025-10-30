@@ -3,12 +3,12 @@ import { IntroScreen } from './components/IntroScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { CreateEventScreen } from './components/CreateEventScreen';
-// Removed friends submission/group match flow to avoid switching to invitee perspective
+import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
 import { createSession, createEvent as apiCreateEvent, fetchEventProgress, submitPreference, type ApiEvent, type ApiInvitation } from './api';
 import { Toaster } from './components/ui/sonner';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'eventDetails' | 'eventPending' | 'inviteResponse';
 
@@ -34,7 +34,13 @@ export interface EventData {
   invitedFriends?: string[];
 }
 
-// FriendPreference and invitee submission flow removed
+export interface FriendPreference {
+  name: string;
+  availableTimes: string[];
+  activities: string[];
+  budgetRange: [number, number];
+  ideas: string;
+}
 
 function App() {
   // Initialize screen from URL hash or default to 'intro'
@@ -274,11 +280,11 @@ function App() {
             onBack={() => navigateToScreen('home')}
           />
         )}
-        {currentScreen === 'inviteResponse' && activeInvitation && (
+        {currentScreen === 'inviteResponse' && activeInvitation && activeInvitation.event && (
           <FriendsSubmissionScreen
             eventData={{}}
             friendName={userData.name}
-            organizerName={activeInvitation.event.organizer.name}
+            organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
             onSubmit={async (pref) => {
               try {
                 await submitPreference(activeInvitation.access_token, {
@@ -293,6 +299,7 @@ function App() {
                 setInvitations((prev) => prev.filter((i) => i.id !== activeInvitation.id));
                 navigateToScreen('home');
               } catch (e) {
+                toast.error('Failed to submit preferences');
                 navigateToScreen('home');
               }
             }}
