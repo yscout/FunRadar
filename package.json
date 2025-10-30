@@ -1,11 +1,15 @@
 {
-    "name": "funradar-root",
-    "private": true,
-    "scripts": {
-      "heroku-postbuild": "npm --prefix frontend ci --no-audit --no-fund && npm --prefix frontend run build"
-    },
-    "engines": {
-      "node": "20.x",
-      "npm": "10.x"
-    }
-  }
+  "name": "funradar",
+  "version": "1.0.0",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
+  "scripts": {
+    "heroku-postbuild": "npm --prefix frontend install --no-audit --no-fund && npm --prefix frontend run build",
+    "start": "cd backend && bundle exec rails server -p $PORT"
+  },
+  "cacheDirectories": [
+    "frontend/node_modules"
+  ]
+}
