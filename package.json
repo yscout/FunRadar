@@ -1,0 +1,11 @@
+{
+    "name": "funradar-root",
+    "private": true,
+    "scripts": {
+      "heroku-postbuild": "npm --prefix frontend ci --no-audit --no-fund && npm --prefix frontend run build"
+    },
+    "engines": {
+      "node": "20.x",
+      "npm": "10.x"
+    }
+  }
