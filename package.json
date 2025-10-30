@@ -1,6 +1,7 @@
 {
   "name": "funradar",
   "version": "1.0.0",
+  "description": "FunRadar application",
   "engines": {
     "node": "20.x",
     "npm": "10.x"
@@ -11,5 +12,8 @@
   },
   "cacheDirectories": [
     "frontend/node_modules"
-  ]
+  ],
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
 }

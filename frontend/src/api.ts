@@ -41,11 +41,7 @@ export type ApiUser = {
     });
   }
   
-  export async function listEvents(userId: number): Promise<{ events: ApiEvent[] }> {
-    return request<{ events: ApiEvent[] }>('/api/events', {
-      headers: { 'X-User-Id': String(userId) },
-    });
-  }
+// listEvents removed (unused)
   
   export type CreateEventRequest = {
     title?: string;

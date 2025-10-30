@@ -49,12 +49,19 @@
         '@': path.resolve(__dirname, './src'),
       },
     },
-    build: {
-      target: 'esnext',
-      outDir: 'build',
+  build: {
+    target: 'esnext',
+    outDir: '../backend/public',
+    emptyOutDir: false, // Don't delete Rails' existing public files
+  },
+  server: {
+    port: 3000,
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001', // Rails backend port
+        changeOrigin: true,
+      },
     },
-    server: {
-      port: 3000,
-      open: true,
-    },
+  },
   });

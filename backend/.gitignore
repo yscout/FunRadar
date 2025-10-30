@@ -30,6 +30,12 @@
 
 /public/assets
 
+# Ignore built React frontend files
+/public/index.html
+/public/assets/*.js
+/public/assets/*.css
+/public/vite.svg
+
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 

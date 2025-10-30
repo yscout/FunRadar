@@ -7,7 +7,7 @@ import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { GroupMatchResultScreen } from './components/GroupMatchResultScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
-import { createSession, listEvents, createEvent as apiCreateEvent, fetchEventProgress, type ApiEvent } from './api';
+import { createSession, createEvent as apiCreateEvent, fetchEventProgress, type ApiEvent } from './api';
 
 type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'friendsSubmission' | 'groupMatch' | 'eventDetails' | 'eventPending';
 
