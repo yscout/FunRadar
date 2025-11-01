@@ -4,6 +4,26 @@
 # this file to always be loaded, without a need to explicitly require it in any
 # files.
 
+if ENV.fetch("ENABLE_COVERAGE", "true") == "true"
+  require "simplecov"
+  require "simplecov-console"
+
+  SimpleCov.load_profile "rails"
+  SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::Console
+  ])
+
+  SimpleCov.start do
+    enable_coverage :branch
+    add_filter %w[app/channels app/jobs app/mailers bin config spec test vendor]
+    add_group "Models", "app/models"
+    add_group "Services", "app/services"
+    add_group "Requests", "app/requests"
+    track_files "app/**/*.rb"
+  end
+end
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest

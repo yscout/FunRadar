@@ -103,7 +103,6 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
 
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
-      {/* Header */}
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 md:p-8 pb-4 md:pb-6">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3 mb-4">

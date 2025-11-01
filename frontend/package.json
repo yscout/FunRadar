@@ -1,6 +1,6 @@
 
   {
-      "name": "Gather&Go Mobile App Design",
+      "name": "App Design",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
@@ -46,12 +46,12 @@
           "recharts": "^2.15.2",
           "sonner": "^2.0.3",
           "tailwind-merge": "*",
-          "vaul": "^1.1.2"
-      },
-      "devDependencies": {
+          "vaul": "^1.1.2",
           "@types/node": "^20.10.0",
           "@vitejs/plugin-react-swc": "^3.10.2",
           "vite": "6.3.5"
+      },
+      "devDependencies": {
       },
       "scripts": {
           "dev": "vite",

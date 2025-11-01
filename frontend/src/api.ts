@@ -15,9 +15,42 @@ export type ApiUser = {
   
   export type SessionResponse = {
     user: ApiUser;
-    invitations: any[];
+  invitations: ApiInvitation[];
     organized_events: ApiEvent[];
+  first_time: boolean;
   };
+
+export type ApiInvitation = {
+  id: number;
+  role: 'organizer' | 'participant';
+  status: 'pending' | 'submitted';
+  name: string; // invitee display name
+  responded_at?: string | null;
+  event_id: number;
+  invitee_id?: number | null;
+  access_token: string;
+  event: ApiEvent & { organizer: { id: number; name: string } };
+};
+
+export type PreferenceRequest = {
+  available_times?: string[];
+  activities?: string[];
+  budget_min?: number;
+  budget_max?: number;
+  ideas?: string;
+};
+
+export async function submitPreference(
+  invitationToken: string,
+  preference: PreferenceRequest,
+  userId?: number | null,
+): Promise<{ invitation: ApiInvitation }> {
+  return request(`/api/preferences?invitation_token=${encodeURIComponent(invitationToken)}`, {
+    method: 'POST',
+    headers: userId ? { 'X-User-Id': String(userId) } : undefined,
+    body: JSON.stringify({ preference }),
+  });
+}
   
   async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const res = await fetch(path, {
@@ -41,11 +74,7 @@ export type ApiUser = {
     });
   }
   
-  export async function listEvents(userId: number): Promise<{ events: ApiEvent[] }> {
-    return request<{ events: ApiEvent[] }>('/api/events', {
-      headers: { 'X-User-Id': String(userId) },
-    });
-  }
+// listEvents removed (unused)
   
   export type CreateEventRequest = {
     title?: string;

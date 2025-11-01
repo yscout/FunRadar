@@ -1,2 +1,2 @@
-default: --publish-quiet --format progress
+default: --publish-quiet --format Cucumber::Formatter::CustomProgress --require features
 

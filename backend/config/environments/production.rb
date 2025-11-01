@@ -15,6 +15,9 @@ Rails.application.configure do
   # Turn on fragment caching in view templates.
   config.action_controller.perform_caching = true
 
+  # Enable serving static files from the `public` folder (required for serving React app)
+  config.public_file_server.enabled = true
+  
   # Cache assets for far-future expiry since they are all digest stamped.
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
@@ -85,10 +88,11 @@ Rails.application.configure do
   #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
   # ]
   config.hosts += [
+    "funradar-b8f29a7d90f1.herokuapp.com",
+    /.*\.herokuapp\.com/,
     /.*-yukieos-projects\.vercel\.app\z/,
     /\.herokuapp\.com\z/,
     /\.ngrok-free\.app\z/
   ]
-
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end

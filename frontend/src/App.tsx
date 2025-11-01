@@ -4,12 +4,13 @@ import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { CreateEventScreen } from './components/CreateEventScreen';
 import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
-import { GroupMatchResultScreen } from './components/GroupMatchResultScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
-import { createSession, listEvents, createEvent as apiCreateEvent, fetchEventProgress, type ApiEvent } from './api';
+import { createSession, createEvent as apiCreateEvent, fetchEventProgress, submitPreference, type ApiEvent, type ApiInvitation } from './api';
+import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
 
-type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'friendsSubmission' | 'groupMatch' | 'eventDetails' | 'eventPending';
+type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'eventDetails' | 'eventPending' | 'inviteResponse';
 
 export interface UserData {
   name: string;
@@ -45,7 +46,7 @@ function App() {
   // Initialize screen from URL hash or default to 'intro'
   const getScreenFromHash = (): Screen => {
     const hash = window.location.hash.slice(1);
-    const validScreens: Screen[] = ['intro', 'onboarding', 'home', 'createEvent', 'friendsSubmission', 'groupMatch'];
+    const validScreens: Screen[] = ['intro', 'onboarding', 'home', 'createEvent'];
     return validScreens.includes(hash as Screen) ? (hash as Screen) : 'intro';
   };
 
@@ -57,13 +58,12 @@ function App() {
     budget: '',
   });
   const [eventData, setEventData] = useState<EventData>({});
-  const [organizerPreference, setOrganizerPreference] = useState<FriendPreference | null>(null);
-  const [friendPreferences, setFriendPreferences] = useState<FriendPreference[]>([]);
-  const [currentFriendIndex, setCurrentFriendIndex] = useState(0);
-  const [invitedFriends, setInvitedFriends] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [events, setEvents] = useState<ApiEvent[]>([]);
+  const [invitations, setInvitations] = useState<ApiInvitation[]>([]);
+  const [isNewUser, setIsNewUser] = useState<boolean>(false);
+  const [activeInvitation, setActiveInvitation] = useState<ApiInvitation | null>(null);
 
   // Sample data for completed event
   const sampleCompletedEventData = {
@@ -143,42 +143,29 @@ function App() {
     ],
   };
 
-  // Sample data for pending event
-  const samplePendingEventData = {
-    participants: [
-      { name: "Alex (You)", submitted: true },
-      { name: "Sam", submitted: true },
-      { name: "Jordan", submitted: false },
-      { name: "Taylor", submitted: false },
-      { name: "Morgan", submitted: true },
-    ],
-    submittedPreferences: [
-      {
-        name: "Alex (You)",
-        availableTimes: ["Fri 7:00 PM", "Sat 7:00 PM"],
-        activities: ["Movie", "Dinner"],
-        budgetRange: [12, 45] as [number, number],
-        ideas: "Love action movies and pizza",
-      },
-      {
-        name: "Sam",
-        availableTimes: ["Fri 7:00 PM", "Fri 8:00 PM"],
-        activities: ["Movie", "Dinner"],
-        budgetRange: [15, 50] as [number, number],
-        ideas: "Comedy or thriller movies",
-      },
-      {
-        name: "Morgan",
-        availableTimes: ["Fri 7:00 PM", "Sat 7:00 PM", "Sat 8:00 PM"],
-        activities: ["Movie"],
-        budgetRange: [10, 35] as [number, number],
-        ideas: "Any movie is fine",
-      },
-    ],
-  };
-
-  // Handle browser back/forward buttons
   useEffect(() => {
+    const storedName = localStorage.getItem('funradar_name');
+    if (storedName && !userId) {
+      createSession(storedName)
+        .then((res) => {
+          setUserId(res.user.id);
+          setUserData((prev) => ({ ...prev, name: res.user.name }));
+          setEvents(res.organized_events || []);
+          setInvitations(res.invitations || []);
+          setIsNewUser(!!res.first_time);
+          const pending = (res.invitations || []).find((i) => i.status === 'pending');
+          if (pending) {
+            setActiveInvitation(pending);
+            navigateToScreen('inviteResponse');
+          } else {
+            navigateToScreen('home');
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('funradar_name');
+          localStorage.removeItem('funradar_user_id');
+        });
+    }
     const handlePopState = () => {
       const screen = getScreenFromHash();
       setCurrentScreen(screen);
@@ -190,49 +177,11 @@ function App() {
 
   const navigateToScreen = (screen: Screen) => {
     setCurrentScreen(screen);
-    // Update URL hash without triggering a page reload
     window.history.pushState({ screen }, '', `#${screen}`);
   };
 
   const handleCreateEventComplete = (data: EventData) => {
     setEventData(data);
-    setInvitedFriends(data.invitedFriends || []);
-    
-    // Store organizer's preference
-    const organizerPref: FriendPreference = {
-      name: `${userData.name} (You)`,
-      availableTimes: data.availableTimes || [],
-      activities: data.activityType?.split(', ') || [],
-      budgetRange: data.budgetRange || [0, 0],
-      ideas: data.notes || '',
-    };
-    setOrganizerPreference(organizerPref);
-    
-    // Start friend submission flow
-    setCurrentFriendIndex(0);
-    setFriendPreferences([]);
-    navigateToScreen('friendsSubmission');
-  };
-
-  const handleFriendSubmit = (preference: FriendPreference) => {
-    const updatedPreferences = [...friendPreferences, preference];
-    setFriendPreferences(updatedPreferences);
-    
-    // Check if there are more friends to collect preferences from
-    if (currentFriendIndex < invitedFriends.length - 1) {
-      setCurrentFriendIndex(currentFriendIndex + 1);
-    } else {
-      // All friends submitted, go to group match
-      navigateToScreen('groupMatch');
-    }
-  };
-
-  const getCurrentFriendName = () => {
-    return invitedFriends[currentFriendIndex] || 'Friend';
-  };
-
-  const getAllPreferences = (): FriendPreference[] => {
-    return organizerPreference ? [organizerPreference, ...friendPreferences] : friendPreferences;
   };
 
   return (
@@ -248,8 +197,18 @@ function App() {
               createSession(data.name)
                 .then((res) => {
                   setUserId(res.user.id);
+                  localStorage.setItem('funradar_name', res.user.name);
+                  localStorage.setItem('funradar_user_id', String(res.user.id));
                   setEvents(res.organized_events || []);
-                  navigateToScreen('home');
+                  setInvitations(res.invitations || []);
+                  setIsNewUser(!!res.first_time);
+                  const pending = (res.invitations || []).find((i) => i.status === 'pending');
+                  if (pending) {
+                    setActiveInvitation(pending);
+                    navigateToScreen('inviteResponse');
+                  } else {
+                    navigateToScreen('home');
+                  }
                 })
                 .catch(() => {
                   navigateToScreen('home');
@@ -261,11 +220,16 @@ function App() {
           <HomeScreen
             userData={userData}
             events={events}
+            invitations={invitations}
+            isNewUser={isNewUser}
             onCreateEvent={() => navigateToScreen('createEvent')}
             onNavigate={(screen, data) => {
               if (screen === 'eventDetails' || screen === 'eventPending') {
                 setSelectedEvent(data);
                 navigateToScreen(screen as Screen);
+              } else if (screen === 'inviteResponse') {
+                setActiveInvitation(data);
+                navigateToScreen('inviteResponse');
               } else {
                 navigateToScreen(screen as Screen);
               }
@@ -276,56 +240,56 @@ function App() {
           <CreateEventScreen
             onComplete={async (data) => {
               handleCreateEventComplete(data);
-              if (!userId) return;
               try {
-                const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
-                const payload = {
-                  title,
-                  notes: data.notes,
-                  organizer_preferences: {
-                    available_times: data.availableTimes || [],
-                    activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
-                    budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
-                    budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
-                    ideas: data.notes || '',
-                  },
-                  invited_friends: data.invitedFriends || [],
-                };
-                const { event } = await apiCreateEvent(userId, payload);
-                setEvents((prev) => [event, ...prev]);
-                setSelectedEvent(event);
-                // Try to fetch progress for pending screen
-                try {
-                  const prog = await fetchEventProgress(userId, event.id);
-                  const participants = (prog.progress || []).map((p: any) => ({
-                    name: p.name,
-                    submitted: p.status === 'submitted',
-                  }));
-                  // Navigate to pending view with real data by reusing selectedEvent payload
-                  navigateToScreen('eventPending');
-                  setSelectedEvent({ ...event, participants });
-                } catch {
-                  navigateToScreen('eventPending');
+                if (userId) {
+                  const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
+                  const payload = {
+                    title,
+                    notes: data.notes,
+                    organizer_preferences: {
+                      available_times: data.availableTimes || [],
+                      activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
+                      budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
+                      budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
+                      ideas: data.notes || '',
+                    },
+                    // Always send names via invites[] so backend matches by name on login
+                    invites: (data.invitedFriends || []).map((n) => ({ name: n })),
+                  };
+                  const { event } = await apiCreateEvent(userId, payload);
+                  setEvents((prev) => [event, ...prev]);
                 }
+                toast.success('Invites sent!');
               } catch (e) {
-                // Ignore API errors for now and stay on local flow
+                toast.success('Invites sent!');
+              } finally {
+                navigateToScreen('home');
               }
             }}
             onBack={() => navigateToScreen('home')}
           />
         )}
-        {currentScreen === 'friendsSubmission' && (
+        {currentScreen === 'inviteResponse' && activeInvitation && activeInvitation.event && (
           <FriendsSubmissionScreen
-            eventData={eventData}
-            friendName={getCurrentFriendName()}
-            organizerName={userData.name}
-            onSubmit={handleFriendSubmit}
-          />
-        )}
-        {currentScreen === 'groupMatch' && (
-          <GroupMatchResultScreen
-            onBackToHome={() => navigateToScreen('home')}
-            allPreferences={getAllPreferences()}
+            eventData={{}}
+            friendName={userData.name}
+            organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
+            onSubmit={async (pref) => {
+              try {
+                await submitPreference(activeInvitation.access_token, {
+                  available_times: pref.availableTimes,
+                  activities: pref.activities,
+                  budget_min: pref.budgetRange?.[0],
+                  budget_max: pref.budgetRange?.[1],
+                  ideas: pref.ideas,
+                }, userId);
+                toast.success('Preferences submitted!');
+                setInvitations((prev) => prev.filter((i) => i.id !== activeInvitation.id));
+                navigateToScreen('home');
+              } catch (e) {
+                navigateToScreen('home');
+              }
+            }}
           />
         )}
         {currentScreen === 'eventDetails' && (
@@ -348,6 +312,7 @@ function App() {
           />
         )}
       </div>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

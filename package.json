@@ -1,0 +1,19 @@
+{
+  "name": "funradar",
+  "version": "1.0.0",
+  "description": "FunRadar application",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
+  "scripts": {
+    "heroku-postbuild": "npm --prefix frontend install --no-audit --no-fund && cd frontend && npm run build",
+    "start": "cd backend && bundle exec rails server -p $PORT"
+  },
+  "cacheDirectories": [
+    "frontend/node_modules"
+  ],
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
