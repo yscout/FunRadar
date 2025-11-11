@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { IntroScreen } from './components/IntroScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
@@ -6,11 +6,46 @@ import { CreateEventScreen } from './components/CreateEventScreen';
 import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
-import { createSession, createEvent as apiCreateEvent, fetchEventProgress, submitPreference, type ApiEvent, type ApiInvitation } from './api';
+import {
+  createSession,
+  createEvent as apiCreateEvent,
+  fetchEventProgress,
+  fetchEventResults,
+  fetchEvents,
+  submitPreference,
+  updateUser,
+  type ApiEvent,
+  type ApiInvitation,
+  type ApiMatch,
+  type ApiProgressEntry,
+  type ApiPreferenceSummary,
+  type SessionResponse,
+} from './api';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
-type Screen = 'intro' | 'onboarding' | 'home' | 'createEvent' | 'eventDetails' | 'eventPending' | 'inviteResponse';
+type Screen =
+  | 'intro'
+  | 'onboarding'
+  | 'home'
+  | 'createEvent'
+  | 'eventDetails'
+  | 'eventPending'
+  | 'inviteResponse';
+
+const getScreenFromHash = (): Screen => {
+  const hash = window.location.hash.slice(1);
+  const validScreens: Screen[] = [
+    'intro',
+    'onboarding',
+    'home',
+    'createEvent',
+    'eventDetails',
+    'eventPending',
+    'inviteResponse',
+  ];
+  return validScreens.includes(hash as Screen) ? (hash as Screen) : 'intro';
+};
 
 export interface UserData {
   name: string;
@@ -39,275 +74,297 @@ export interface FriendPreference {
   availableTimes: string[];
   activities: string[];
   budgetRange: [number, number];
-  ideas: string;
+  ideas?: string;
 }
 
-function App() {
-  // Initialize screen from URL hash or default to 'intro'
-  const getScreenFromHash = (): Screen => {
-    const hash = window.location.hash.slice(1);
-    const validScreens: Screen[] = ['intro', 'onboarding', 'home', 'createEvent'];
-    return validScreens.includes(hash as Screen) ? (hash as Screen) : 'intro';
-  };
+type LoadedEvent = {
+  event: ApiEvent;
+  progress?: ApiProgressEntry[];
+  matches?: ApiMatch[];
+  preferences?: FriendPreference[];
+};
 
+const mapPreferences = (prefs?: ApiPreferenceSummary[]): FriendPreference[] => {
+  return (prefs || []).map((pref) => ({
+    name: pref.name || 'Friend',
+    availableTimes: pref.available_times || [],
+    activities: pref.activities || [],
+    budgetRange: [
+      pref.budget_min ?? 0,
+      pref.budget_max ?? 0,
+    ] as [number, number],
+    ideas: pref.ideas || '',
+  }));
+};
+
+function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(getScreenFromHash());
   const [userData, setUserData] = useState<UserData>({
     name: '',
     interests: [],
     availableTimes: [],
     budget: '',
+    locationPermission: false,
   });
-  const [eventData, setEventData] = useState<EventData>({});
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [invitations, setInvitations] = useState<ApiInvitation[]>([]);
   const [isNewUser, setIsNewUser] = useState<boolean>(false);
   const [activeInvitation, setActiveInvitation] = useState<ApiInvitation | null>(null);
+  const [loadedEvent, setLoadedEvent] = useState<LoadedEvent | null>(null);
+  const [isEventLoading, setIsEventLoading] = useState(false);
 
-  // Sample data for completed event
-  const sampleCompletedEventData = {
-    matchResults: [
-      {
-        id: 1,
-        title: "Free Jazz Picnic",
-        compatibility: 95,
-        image: "https://images.unsplash.com/photo-1603543900250-275a638755a9",
-        location: "Central Park",
-        price: "$15/person",
-        time: "Saturday, 3:00 PM",
-        emoji: "🎶",
-        votes: 4,
-        description: "Live jazz band with picnic setup and food trucks",
-        groupRatings: [5, 4, 5, 4],
-        ratedCount: 4,
-      },
-      {
-        id: 2,
-        title: "Rooftop Dinner",
-        compatibility: 88,
-        image: "https://images.unsplash.com/photo-1742002661612-771125d0c050?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb29mdG9wJTIwZGlubmVyJTIwY2l0eXxlbnwxfHx8fDE3NjEyMzU0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-        location: "Downtown Skybar",
-        price: "$45/person",
-        time: "Friday, 7:00 PM",
-        emoji: "🍽️",
-        votes: 4,
-        description: "Italian cuisine with city views",
-        groupRatings: [4, 3, 5, 4],
-        ratedCount: 4,
-      },
-      {
-        id: 3,
-        title: "Coffee & Catch Up",
-        compatibility: 85,
-        image: "https://images.unsplash.com/photo-1721845706930-b3a05aa70baa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBzaG9wJTIwZnJpZW5kc3xlbnwxfHx8fDE3NjExNzkzMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-        location: "The Brew House",
-        price: "$8/person",
-        time: "Sunday, 10:00 AM",
-        emoji: "☕",
-        votes: 4,
-        description: "Cozy cafe with board games",
-        groupRatings: [4, 5, 3, 4],
-        ratedCount: 4,
-      },
-    ],
-    allPreferences: [
-      {
-        name: "Alex (You)",
-        availableTimes: ["Sat 3:00 PM", "Sat 4:00 PM", "Sun 10:00 AM", "Sun 2:00 PM"],
-        activities: ["Picnic", "Coffee", "Dinner"],
-        budgetRange: [15, 60] as [number, number],
-        ideas: "Love outdoor activities and good food",
-      },
-      {
-        name: "Sam",
-        availableTimes: ["Sat 2:00 PM", "Sat 3:00 PM", "Sat 7:00 PM"],
-        activities: ["Picnic", "Dinner", "Coffee"],
-        budgetRange: [20, 70] as [number, number],
-        ideas: "Something casual and fun",
-      },
-      {
-        name: "Jordan",
-        availableTimes: ["Sat 3:00 PM", "Sat 4:00 PM", "Sun 10:00 AM"],
-        activities: ["Coffee", "Picnic", "Dinner"],
-        budgetRange: [10, 50] as [number, number],
-        ideas: "Prefer something affordable",
-      },
-      {
-        name: "Taylor",
-        availableTimes: ["Sat 2:00 PM", "Sat 7:00 PM", "Sun 2:00 PM"],
-        activities: ["Dinner", "Picnic"],
-        budgetRange: [25, 80] as [number, number],
-        ideas: "Really into food experiences",
-      },
-    ],
-  };
+  const navigateToScreen = useCallback((screen: Screen) => {
+    setCurrentScreen(screen);
+    window.history.pushState({ screen }, '', `#${screen}`);
+  }, []);
+
+  const handlePostLoginNavigation = useCallback(
+    (invites: ApiInvitation[] = []) => {
+      const pending = invites.find((inv) => inv.status === 'pending');
+      if (pending) {
+        setActiveInvitation(pending);
+        navigateToScreen('inviteResponse');
+      } else {
+        navigateToScreen('home');
+      }
+    },
+    [navigateToScreen],
+  );
+
+  const refreshEvents = useCallback(
+    async (id?: number) => {
+      const targetId = id ?? userId;
+      if (!targetId) return;
+      try {
+        const { events: mergedEvents } = await fetchEvents(targetId);
+        setEvents(mergedEvents);
+      } catch (error) {
+        console.warn('Unable to refresh events', error);
+      }
+    },
+    [userId],
+  );
+
+  const bootstrapSession = useCallback(
+    (res: SessionResponse) => {
+      setUserId(res.user.id);
+      setUserData((prev) => ({
+        ...prev,
+        name: res.user.name,
+        locationPermission:
+          typeof res.user.location_permission === 'boolean'
+            ? res.user.location_permission
+            : prev.locationPermission,
+        location: res.user.location || prev.location,
+      }));
+      setEvents(res.organized_events || []);
+      setInvitations(res.invitations || []);
+      setIsNewUser(!!res.first_time);
+      localStorage.setItem('funradar_name', res.user.name);
+      localStorage.setItem('funradar_user_id', String(res.user.id));
+    },
+    [],
+  );
+
+  const persistLocation = useCallback(async (id: number, data: UserData) => {
+    if (typeof data.locationPermission === 'undefined') return;
+    try {
+      await updateUser(id, {
+        location_permission: data.locationPermission,
+        location_latitude: data.location?.latitude,
+        location_longitude: data.location?.longitude,
+      });
+    } catch (error) {
+      console.warn('Unable to update user location', error);
+    }
+  }, []);
+
+  const handleSessionResponse = useCallback(
+    async (res: SessionResponse, onboardingPayload?: UserData) => {
+      bootstrapSession(res);
+      if (onboardingPayload) {
+        await persistLocation(res.user.id, onboardingPayload);
+      }
+      await refreshEvents(res.user.id);
+      handlePostLoginNavigation(res.invitations || []);
+    },
+    [bootstrapSession, handlePostLoginNavigation, persistLocation, refreshEvents],
+  );
 
   useEffect(() => {
     const storedName = localStorage.getItem('funradar_name');
     if (storedName && !userId) {
       createSession(storedName)
-        .then((res) => {
-          setUserId(res.user.id);
-          setUserData((prev) => ({ ...prev, name: res.user.name }));
-          setEvents(res.organized_events || []);
-          setInvitations(res.invitations || []);
-          setIsNewUser(!!res.first_time);
-          const pending = (res.invitations || []).find((i) => i.status === 'pending');
-          if (pending) {
-            setActiveInvitation(pending);
-            navigateToScreen('inviteResponse');
-          } else {
-            navigateToScreen('home');
-          }
-        })
+        .then((res) => handleSessionResponse(res))
         .catch(() => {
           localStorage.removeItem('funradar_name');
           localStorage.removeItem('funradar_user_id');
         });
     }
-    const handlePopState = () => {
-      const screen = getScreenFromHash();
-      setCurrentScreen(screen);
-    };
+  }, [userId, handleSessionResponse]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentScreen(getScreenFromHash());
+    };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const navigateToScreen = (screen: Screen) => {
-    setCurrentScreen(screen);
-    window.history.pushState({ screen }, '', `#${screen}`);
+  const handleOnboardingComplete = (data: UserData) => {
+    setUserData(data);
+    createSession(data.name)
+      .then((res) => handleSessionResponse(res, data))
+      .catch(() => {
+        navigateToScreen('home');
+      });
   };
 
-  const handleCreateEventComplete = (data: EventData) => {
-    setEventData(data);
+  const handleCreateEvent = async (data: EventData) => {
+    try {
+      if (userId) {
+        const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
+        const payload = {
+          title,
+          notes: data.notes,
+          organizer_preferences: {
+            available_times: data.availableTimes || [],
+            activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
+            budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
+            budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
+            ideas: data.notes || '',
+          },
+          invites: (data.invitedFriends || []).map((name) => ({ name })),
+        };
+        const { event } = await apiCreateEvent(userId, payload);
+        setEvents((prev) => [event, ...prev]);
+        await refreshEvents();
+      }
+      toast.success('Invites sent!');
+    } catch (error) {
+      toast.error('Unable to create event');
+    } finally {
+      navigateToScreen('home');
+    }
+  };
+
+  const openEvent = useCallback(
+    async (event: ApiEvent) => {
+      if (!userId) return;
+      setIsEventLoading(true);
+      try {
+        if (event.status === 'ready') {
+          const { event: eventPayload, matches } = await fetchEventResults(userId, event.id);
+          setLoadedEvent({
+            event: eventPayload,
+            matches,
+            preferences: mapPreferences(eventPayload.preferences),
+          });
+          navigateToScreen('eventDetails');
+        } else {
+          const { event: eventPayload, progress } = await fetchEventProgress(userId, event.id);
+          setLoadedEvent({
+            event: eventPayload,
+            progress,
+            preferences: mapPreferences(eventPayload.preferences),
+          });
+          navigateToScreen('eventPending');
+        }
+      } catch (error) {
+        toast.error('Unable to load event');
+      } finally {
+        setIsEventLoading(false);
+      }
+    },
+    [navigateToScreen, userId],
+  );
+
+  const handleInvitationSubmit = async (
+    pref: FriendPreference,
+    invitation: ApiInvitation,
+  ): Promise<void> => {
+    try {
+      await submitPreference(
+        invitation.access_token,
+        {
+          available_times: pref.availableTimes,
+          activities: pref.activities,
+          budget_min: pref.budgetRange?.[0],
+          budget_max: pref.budgetRange?.[1],
+          ideas: pref.ideas,
+        },
+        userId,
+      );
+      toast.success('Preferences submitted!');
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitation.id));
+      setActiveInvitation(null);
+      await refreshEvents();
+      navigateToScreen('home');
+    } catch (error) {
+      toast.error('Unable to submit preferences');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-sky-100 to-peach-100 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px] relative">
+      <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px]
+relative">
         {currentScreen === 'intro' && (
           <IntroScreen onGetStarted={() => navigateToScreen('onboarding')} />
         )}
+
         {currentScreen === 'onboarding' && (
-          <OnboardingScreen
-            onComplete={(data) => {
-              setUserData(data);
-              createSession(data.name)
-                .then((res) => {
-                  setUserId(res.user.id);
-                  localStorage.setItem('funradar_name', res.user.name);
-                  localStorage.setItem('funradar_user_id', String(res.user.id));
-                  setEvents(res.organized_events || []);
-                  setInvitations(res.invitations || []);
-                  setIsNewUser(!!res.first_time);
-                  const pending = (res.invitations || []).find((i) => i.status === 'pending');
-                  if (pending) {
-                    setActiveInvitation(pending);
-                    navigateToScreen('inviteResponse');
-                  } else {
-                    navigateToScreen('home');
-                  }
-                })
-                .catch(() => {
-                  navigateToScreen('home');
-                });
-            }}
-          />
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
         )}
+
         {currentScreen === 'home' && (
           <HomeScreen
             userData={userData}
             events={events}
             invitations={invitations}
             isNewUser={isNewUser}
+            loadingEvent={isEventLoading}
             onCreateEvent={() => navigateToScreen('createEvent')}
-            onNavigate={(screen, data) => {
-              if (screen === 'eventDetails' || screen === 'eventPending') {
-                setSelectedEvent(data);
-                navigateToScreen(screen as Screen);
-              } else if (screen === 'inviteResponse') {
-                setActiveInvitation(data);
-                navigateToScreen('inviteResponse');
-              } else {
-                navigateToScreen(screen as Screen);
-              }
+            onSelectEvent={openEvent}
+            onRespondToInvite={(invitation) => {
+              setActiveInvitation(invitation);
+              navigateToScreen('inviteResponse');
             }}
           />
         )}
+
         {currentScreen === 'createEvent' && (
           <CreateEventScreen
-            onComplete={async (data) => {
-              handleCreateEventComplete(data);
-              try {
-                if (userId) {
-                  const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
-                  const payload = {
-                    title,
-                    notes: data.notes,
-                    organizer_preferences: {
-                      available_times: data.availableTimes || [],
-                      activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
-                      budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
-                      budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
-                      ideas: data.notes || '',
-                    },
-                    // Always send names via invites[] so backend matches by name on login
-                    invites: (data.invitedFriends || []).map((n) => ({ name: n })),
-                  };
-                  const { event } = await apiCreateEvent(userId, payload);
-                  setEvents((prev) => [event, ...prev]);
-                }
-                toast.success('Invites sent!');
-              } catch (e) {
-                toast.success('Invites sent!');
-              } finally {
-                navigateToScreen('home');
-              }
-            }}
+            onComplete={handleCreateEvent}
             onBack={() => navigateToScreen('home')}
           />
         )}
+
         {currentScreen === 'inviteResponse' && activeInvitation && activeInvitation.event && (
           <FriendsSubmissionScreen
+            eventTitle={activeInvitation.event.title}
             eventData={{}}
             friendName={userData.name}
             organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
-            onSubmit={async (pref) => {
-              try {
-                await submitPreference(activeInvitation.access_token, {
-                  available_times: pref.availableTimes,
-                  activities: pref.activities,
-                  budget_min: pref.budgetRange?.[0],
-                  budget_max: pref.budgetRange?.[1],
-                  ideas: pref.ideas,
-                }, userId);
-                toast.success('Preferences submitted!');
-                setInvitations((prev) => prev.filter((i) => i.id !== activeInvitation.id));
-                navigateToScreen('home');
-              } catch (e) {
-                navigateToScreen('home');
-              }
-            }}
+            onSubmit={(pref) => handleInvitationSubmit(pref, activeInvitation)}
           />
         )}
-        {currentScreen === 'eventDetails' && (
+
+        {currentScreen === 'eventDetails' && loadedEvent && (
           <EventDetailsScreen
-            eventId={selectedEvent?.id || 1}
-            eventTitle={selectedEvent?.title || 'Event'}
+            event={loadedEvent.event}
+            matchResults={loadedEvent.matches || []}
+            preferences={loadedEvent.preferences || []}
             onBack={() => navigateToScreen('home')}
-            allPreferences={sampleCompletedEventData.allPreferences}
-            matchResults={sampleCompletedEventData.matchResults}
           />
         )}
-        {currentScreen === 'eventPending' && (
+
+        {currentScreen === 'eventPending' && loadedEvent && (
           <EventPendingScreen
-            eventId={selectedEvent?.id || 0}
-            eventTitle={selectedEvent?.title || 'New Hangout'}
-            organizerName={userData.name}
-            participants={selectedEvent?.participants || []}
-            submittedPreferences={[]}
+            eventTitle={loadedEvent.event.title}
+            organizerName={loadedEvent.event.organizer?.name || userData.name}
+            progress={loadedEvent.progress || loadedEvent.event.progress || []}
             onBack={() => navigateToScreen('home')}
           />
         )}

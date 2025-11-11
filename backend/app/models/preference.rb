@@ -30,6 +30,9 @@ class Preference < ApplicationRecord
 
   def to_api
     {
+      name: invitation&.display_name,
+      role: invitation&.role,
+      invitee_id: invitation&.invitee_id,
       available_times: available_times,
       activities: activities,
       budget_min: budget_min,
