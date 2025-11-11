@@ -88,16 +88,28 @@ export type PreferenceRequest = {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Request failed ${res.status}: ${text || res.statusText}`);
+    let errorMessage = res.statusText;
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          errorMessage = json.error || json.message || text;
+        } catch {
+          errorMessage = text;
+        }
+      }
+    } catch {
+    }
+    throw new Error(`Request failed ${res.status}: ${errorMessage}`);
   }
 
   return (await res.json()) as T;
@@ -118,7 +130,7 @@ export async function updateUser(
     location_longitude?: number;
   },
 ): Promise<{ user: ApiUser }> {
-  return request<{ user: ApiUser }>('/api/users', {
+  return request<{ user: ApiUser }>(`/api/users/${userId}`, {
     method: 'PUT',
     headers: { 'X-User-Id': String(userId) },
     body: JSON.stringify({ user: payload }),
@@ -174,12 +186,21 @@ export async function fetchEvents(userId: number): Promise<{ events: ApiEvent[] 
   });
 }
 
+export async function fetchInvitationByToken(
+  token: string,
+  userId?: number | null,
+): Promise<{ invitation: ApiInvitation; event: ApiEvent }> {
+  return request(`/api/invitations/${encodeURIComponent(token)}`, {
+    headers: userId ? { 'X-User-Id': String(userId) } : undefined,
+  });
+}
+
 export async function submitPreference(
   invitationToken: string,
   preference: PreferenceRequest,
   userId?: number | null,
 ): Promise<{ invitation: ApiInvitation }> {
-  return request(`/api/preferences?invitation_token=${encodeURIComponent(invitationToken)}`, {
+  return request(`/api/invitations/${encodeURIComponent(invitationToken)}/preference`, {
     method: 'POST',
     headers: userId ? { 'X-User-Id': String(userId) } : undefined,
     body: JSON.stringify({ preference }),

@@ -68,7 +68,7 @@ interface TimeSlotSelection {
   time: string;
 }
 
-export function FriendsSubmissionScreen({ eventData, friendName, organizerName, onSubmit }: FriendsSubmissionScreenProps) {
+export function FriendsSubmissionScreen({ eventTitle, eventData, friendName, organizerName, onSubmit }: FriendsSubmissionScreenProps) {
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlotSelection[]>([]);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([20, 80]);

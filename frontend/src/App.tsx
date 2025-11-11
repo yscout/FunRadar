@@ -11,6 +11,7 @@ import {
   createEvent as apiCreateEvent,
   fetchEventProgress,
   fetchEventResults,
+  fetchInvitationByToken,
   submitPreference,
   updateUser,
   type ApiEvent,
@@ -121,12 +122,13 @@ function App() {
   const handlePostLoginNavigation = useCallback(
     (invites: ApiInvitation[] = []) => {
       const pending = invites.find((inv) => inv.status === 'pending');
-      if (pending) {
+      const wantsInviteScreen = getScreenFromHash() === 'inviteResponse';
+      if (pending && wantsInviteScreen) {
         setActiveInvitation(pending);
         navigateToScreen('inviteResponse');
-      } else {
-        navigateToScreen('home');
+        return;
       }
+      navigateToScreen('home');
     },
     [navigateToScreen],
   );
@@ -252,30 +254,61 @@ function App() {
       });
   };
 
+  useEffect(() => {
+    if (currentScreen !== 'inviteResponse') return;
+    if (activeInvitation && activeInvitation.event) return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invitation_token');
+    if (token) {
+      (async () => {
+        try {
+          const { invitation } = await fetchInvitationByToken(token, userId);
+          setActiveInvitation(invitation);
+        } catch {
+          toast.error('Invalid or expired invitation link');
+          navigateToScreen('home');
+        }
+      })();
+      return;
+    }
+    const pending = invitations.find((inv) => inv.status === 'pending');
+    if (pending) {
+      setActiveInvitation(pending);
+      return;
+    }
+
+    toast.info('No pending invitations found');
+    navigateToScreen('home');
+  }, [currentScreen, invitations, activeInvitation, navigateToScreen, userId]);
+
   const handleCreateEvent = async (data: EventData) => {
     try {
-      if (userId) {
-        const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
-        const payload = {
-          title,
-          notes: data.notes,
-          organizer_preferences: {
-            available_times: data.availableTimes || [],
-            activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
-            budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
-            budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
-            ideas: data.notes || '',
-          },
-          invites: (data.invitedFriends || []).map((name) => ({ name })),
-        };
-        const { event } = await apiCreateEvent(userId, payload);
-        setEvents((prev) => [event, ...prev]);
+      if (!userId) {
+        toast.error('Please log in to create an event');
+        return;
       }
+
+      const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
+      const payload = {
+        title,
+        notes: data.notes,
+        organizer_preferences: {
+          available_times: data.availableTimes || [],
+          activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
+          budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
+          budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
+          ideas: data.notes || '',
+        },
+        invites: (data.invitedFriends || []).map((name) => ({ name })),
+      };
+      const { event } = await apiCreateEvent(userId, payload);
+      setEvents((prev) => [event, ...prev]);
       toast.success('Invites sent!');
-    } catch (error) {
-      toast.error('Unable to create event');
-    } finally {
       navigateToScreen('home');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unable to create event';
+      toast.error(errorMessage.includes('Unauthorized') ? 'Please log in to create an event' : 'Unable to create event');
     }
   };
 
@@ -370,14 +403,26 @@ function App() {
           />
         )}
 
-        {currentScreen === 'inviteResponse' && activeInvitation && activeInvitation.event && (
-          <FriendsSubmissionScreen
-            eventTitle={activeInvitation.event.title}
-            eventData={{}}
-            friendName={userData.name}
-            organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
-            onSubmit={(pref) => handleInvitationSubmit(pref, activeInvitation)}
-          />
+        {currentScreen === 'inviteResponse' && (
+          activeInvitation && activeInvitation.event ? (
+            <FriendsSubmissionScreen
+              eventTitle={activeInvitation.event.title}
+              eventData={{}}
+              friendName={userData.name}
+              organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
+              onSubmit={(pref) => handleInvitationSubmit(pref, activeInvitation)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 gap-3">
+              <div className="text-gray-500">Loading invitation...</div>
+              <button
+                onClick={() => navigateToScreen('home')}
+                className="px-4 py-2 rounded-xl border border-gray-200 hover:border-purple-300"
+              >
+                Go to Home
+              </button>
+            </div>
+          )
         )}
 
         {currentScreen === 'eventDetails' && loadedEvent && (
