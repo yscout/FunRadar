@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
-import { Plus, Users, Calendar, Loader2 } from 'lucide-react';
+import { Plus, Users, Calendar, Loader2, LogOut } from 'lucide-react';
 import type { UserData } from '../App';
 import type { ApiEvent, ApiInvitation } from '../api';
 
@@ -16,6 +16,7 @@ interface HomeScreenProps {
   onCreateEvent: () => void;
   onSelectEvent: (event: ApiEvent) => void;
   onRespondToInvite: (invitation: ApiInvitation) => void;
+  onLogout?: () => void;
 }
 
 export function HomeScreen({
@@ -27,6 +28,7 @@ export function HomeScreen({
   onCreateEvent,
   onSelectEvent,
   onRespondToInvite,
+  onLogout,
 }: HomeScreenProps) {
   const sortedEvents = useMemo(
     () =>
@@ -54,6 +56,17 @@ export function HomeScreen({
                 <div className="text-white md:text-xl">{userData.name || 'Friend'}</div>
               </div>
             </div>
+            {onLogout && (
+              <Button
+                onClick={onLogout}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20 rounded-xl"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
+            )}
           </div>
 
           <div className="max-w-2xl mx-auto">

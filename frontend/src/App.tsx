@@ -6,7 +6,7 @@ import { CreateEventScreen } from './components/CreateEventScreen';
 import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
 import { EventDetailsScreen } from './components/EventDetailsScreen';
 import { EventPendingScreen } from './components/EventPendingScreen';
-import { createSession, createEvent as apiCreateEvent, fetchEventProgress, submitPreference, type ApiEvent, type ApiInvitation } from './api';
+import { createSession, createEvent as apiCreateEvent, fetchEventProgress, fetchEventResults, fetchEvents, submitPreference, type ApiEvent, type ApiInvitation, type ApiProgressEntry, type ApiMatch, type ApiPreferenceSummary } from './api';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -97,6 +97,8 @@ function App() {
   const [invitations, setInvitations] = useState<ApiInvitation[]>([]);
   const [isNewUser, setIsNewUser] = useState<boolean>(false);
   const [activeInvitation, setActiveInvitation] = useState<ApiInvitation | null>(null);
+  const [loadedEvent, setLoadedEvent] = useState<LoadedEvent | null>(null);
+  const [eventData, setEventData] = useState<EventData | null>(null);
 
   // Sample data for completed event
   const sampleCompletedEventData = {
@@ -202,6 +204,76 @@ function App() {
     setEventData(data);
   };
 
+  const handleSessionResponse = (res: { user: any; invitations: ApiInvitation[]; organized_events: ApiEvent[]; first_time: boolean }) => {
+    setUserId(res.user.id);
+    localStorage.setItem('funradar_name', res.user.name);
+    localStorage.setItem('funradar_user_id', String(res.user.id));
+    setEvents(res.organized_events || []);
+    setInvitations(res.invitations || []);
+    setIsNewUser(!!res.first_time);
+    setUserData((prev) => ({ ...prev, name: res.user.name }));
+    const pending = (res.invitations || []).find((i) => i.status === 'pending');
+    if (pending) {
+      setActiveInvitation(pending);
+      navigateToScreen('inviteResponse');
+    } else {
+      navigateToScreen('home');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('funradar_name');
+    localStorage.removeItem('funradar_user_id');
+    setUserId(null);
+    setEvents([]);
+    setInvitations([]);
+    setUserData({
+      name: '',
+      interests: [],
+      availableTimes: [],
+      budget: '',
+      locationPermission: false,
+    });
+    setIsNewUser(false);
+    setActiveInvitation(null);
+    setLoadedEvent(null);
+    navigateToScreen('intro');
+  };
+
+  const handleInvitationSubmit = async (pref: any, invitation: ApiInvitation) => {
+    try {
+      await submitPreference(invitation.access_token, pref, userId);
+      toast.success('Preferences submitted!');
+      navigateToScreen('home');
+    } catch (error) {
+      toast.error('Failed to submit preferences');
+    }
+  };
+
+  const setSelectedEvent = async (event: ApiEvent) => {
+    if (!userId) return;
+    try {
+      if (event.status === 'ready') {
+        const { event: fullEvent, matches } = await fetchEventResults(userId, event.id);
+        setLoadedEvent({
+          event: fullEvent,
+          matches: matches || [],
+          preferences: mapPreferences(fullEvent.preferences),
+        });
+        navigateToScreen('eventDetails');
+      } else {
+        const { event: fullEvent, progress } = await fetchEventProgress(userId, event.id);
+        setLoadedEvent({
+          event: fullEvent,
+          progress: progress || [],
+        });
+        navigateToScreen('eventPending');
+      }
+    } catch (error) {
+      toast.error('Failed to load event details');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-sky-100 to-peach-100 flex items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px] relative">
@@ -241,17 +313,12 @@ function App() {
             invitations={invitations}
             isNewUser={isNewUser}
             onCreateEvent={() => navigateToScreen('createEvent')}
-            onNavigate={(screen, data) => {
-              if (screen === 'eventDetails' || screen === 'eventPending') {
-                setSelectedEvent(data);
-                navigateToScreen(screen as Screen);
-              } else if (screen === 'inviteResponse') {
-                setActiveInvitation(data);
-                navigateToScreen('inviteResponse');
-              } else {
-                navigateToScreen(screen as Screen);
-              }
+            onSelectEvent={setSelectedEvent}
+            onRespondToInvite={(inv) => {
+              setActiveInvitation(inv);
+              navigateToScreen('inviteResponse');
             }}
+            onLogout={handleLogout}
           />
         )}
         {currentScreen === 'createEvent' && (
