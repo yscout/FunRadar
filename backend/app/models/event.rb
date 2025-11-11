@@ -51,8 +51,8 @@ class Event < ApplicationRecord
       notes: notes,
       status: status,
       organizer: {
-        id: organizer.id,
-        name: organizer.name
+          id: organizer.id,
+          name: organizer.name
       },
       share_token: share_token,
       created_at: created_at,
@@ -70,6 +70,8 @@ class Event < ApplicationRecord
       payload[:matches] = suggestion&.payload || []
       payload[:ai_generated_at] = ai_generated_at
     end
+
+    payload[:preferences] = aggregate_preferences if include_progress || include_results
 
     payload
   end

@@ -6,10 +6,30 @@ import { Slider } from './ui/slider';
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Check, X, Utensils, Film, Coffee, Music, TreePine, Palette, Gamepad2, Dumbbell, ShoppingBag, Book, Plane, Waves, Mountain, Heart, Building2, Glasses } from 'lucide-react';
+import {
+  Check,
+  X,
+  Utensils,
+  Film,
+  Coffee,
+  Music,
+  TreePine,
+  Palette,
+  Gamepad2,
+  Dumbbell,
+  ShoppingBag,
+  Book,
+  Plane,
+  Waves,
+  Mountain,
+  Heart,
+  Building2,
+  Glasses,
+} from 'lucide-react';
 import type { EventData, FriendPreference } from '../App';
 
 interface FriendsSubmissionScreenProps {
+  eventTitle: string;
   eventData: EventData;
   friendName: string;
   organizerName: string;
@@ -122,12 +142,13 @@ export function FriendsSubmissionScreen({ eventData, friendName, organizerName, 
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       {/* Header */}
-      <div
-        className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
+      <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-6 md:mb-8">
             <div className="text-5xl md:text-6xl mb-3 md:mb-4">🎉</div>
-            <h2 className="text-white mb-2 md:text-3xl">{organizerName} invited you!</h2>
+            <h2 className="text-white mb-2 md:text-3xl">
+              {organizerName} invited you to {eventTitle}
+            </h2>
             <p className="text-white/90 md:text-lg">Help plan the perfect hangout</p>
           </div>
         </div>
