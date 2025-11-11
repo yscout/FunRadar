@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IntroScreen } from './components/IntroScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
@@ -184,6 +184,37 @@ function App() {
         });
     }
   }, [userId, handleSessionResponse]);
+
+  // Auto-reload when a new deploy is detected by polling version.txt
+  const currentVersionRef = useRef<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    async function checkVersionOnce() {
+      try {
+        const res = await fetch(`/version.txt?ts=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const text = (await res.text()).trim();
+        if (!currentVersionRef.current) {
+          currentVersionRef.current = text;
+          return;
+        }
+        if (currentVersionRef.current && text && text !== currentVersionRef.current) {
+          window.location.reload();
+        }
+      } catch {
+        // ignore network/transient errors
+      }
+    }
+    checkVersionOnce();
+    const id = window.setInterval(() => {
+      if (!isMounted) return;
+      checkVersionOnce();
+    }, 15000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
