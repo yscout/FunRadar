@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
 
   # Serve React app's index.html for all frontend routes
   def fallback_index_html
+    response.headers['Cache-Control'] = 'no-store'
     render file: Rails.public_path.join('index.html'), layout: false
   end
 end
