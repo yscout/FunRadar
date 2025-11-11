@@ -168,6 +168,12 @@ export async function fetchEventResults(
   });
 }
 
+export async function fetchEvents(userId: number): Promise<{ events: ApiEvent[] }> {
+  return request('/api/events', {
+    headers: { 'X-User-Id': String(userId) },
+  });
+}
+
 export async function submitPreference(
   invitationToken: string,
   preference: PreferenceRequest,
