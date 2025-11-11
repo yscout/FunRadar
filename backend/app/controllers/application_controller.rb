@@ -13,13 +13,23 @@ class ApplicationController < ActionController::Base
     response.headers['Expires'] = '0'
     
     # Add ETag based on version file if it exists
-    version_file = Rails.public_path.join('version.txt')
-    if version_file.exist?
-      version = version_file.read.strip
-      response.headers['ETag'] = %("#{version}")
-      response.headers['X-App-Version'] = version
+    begin
+      version_file = Rails.public_path.join('version.txt')
+      if version_file.exist?
+        version = version_file.read.strip
+        response.headers['ETag'] = %("#{version}")
+        response.headers['X-App-Version'] = version
+      end
+    rescue => e
+      # Silently fail if version file can't be read
+      Rails.logger.warn("Could not read version file: #{e.message}")
     end
     
-    render file: Rails.public_path.join('index.html'), layout: false
+    index_path = Rails.public_path.join('index.html')
+    if index_path.exist?
+      render file: index_path, layout: false
+    else
+      render plain: 'Application is being deployed. Please try again in a moment.', status: :service_unavailable
+    end
   end
 end
