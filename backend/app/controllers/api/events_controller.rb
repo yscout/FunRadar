@@ -8,7 +8,10 @@ module Api
       organized = current_user.organized_events.includes(:invitations)
       invited = current_user.invitations.includes(:event).map(&:event)
       render json: {
-        events: (organized + invited).uniq.map { |event| event_payload(event, include_results: false) }
+        events: (organized + invited).uniq.map do |event|
+          include_results = event.ready? || event.completed?
+          event_payload(event, include_results:)
+        end
       }
     end
 
@@ -34,9 +37,12 @@ module Api
     end
 
     def results
+      invitation = current_user && @event.invitations.find_by(invitee: current_user)
       render json: {
         event: event_payload(@event, include_progress: false),
-        matches: @event.latest_suggestions&.matches || []
+        matches: @event.latest_suggestions&.matches || [],
+        votes_summary: @event.votes_summary,
+        user_votes: invitation ? invitation.match_votes.pluck(:match_id, :score).to_h : {}
       }
     end
 

@@ -42,11 +42,19 @@ export type ApiPreferenceSummary = {
   submitted_at?: string | null;
 };
 
+export type ApiVotesSummary = Record<
+  string,
+  {
+    total_score: number;
+    ratings_count: number;
+  }
+>;
+
 export type ApiEvent = {
   id: number;
   title: string;
   notes?: string | null;
-  status: 'collecting' | 'pending_ai' | 'ready';
+  status: 'collecting' | 'pending_ai' | 'ready' | 'completed';
   submitted_count?: number;
   participant_count?: number;
   created_at?: string;
@@ -55,6 +63,9 @@ export type ApiEvent = {
   organizer?: { id: number; name: string };
   progress?: ApiProgressEntry[];
   matches?: ApiMatch[];
+  votes_summary?: ApiVotesSummary;
+  final_match?: ApiMatch | null;
+  completed_at?: string | null;
   preferences?: ApiPreferenceSummary[];
   ai_generated_at?: string | null;
 };
@@ -75,6 +86,8 @@ export type SessionResponse = {
   user: ApiUser;
   invitations: ApiInvitation[];
   organized_events: ApiEvent[];
+  participating_events?: ApiEvent[];
+  events?: ApiEvent[];
   first_time: boolean;
 };
 
@@ -172,9 +185,14 @@ export async function fetchEventProgress(
 }
 
 export async function fetchEventResults(
-    userId: number,
-    eventId: number,
-): Promise<{ event: ApiEvent; matches: ApiMatch[] }> {
+  userId: number,
+  eventId: number,
+): Promise<{
+  event: ApiEvent;
+  matches: ApiMatch[];
+  votes_summary: ApiVotesSummary;
+  user_votes: Record<string, number>;
+}> {
   return request(`/api/events/${eventId}/results`, {
     headers: { 'X-User-Id': String(userId) },
   });
@@ -183,6 +201,22 @@ export async function fetchEventResults(
 export async function fetchEvents(userId: number): Promise<{ events: ApiEvent[] }> {
   return request('/api/events', {
     headers: { 'X-User-Id': String(userId) },
+  });
+}
+
+export async function submitMatchVotes(
+  userId: number,
+  eventId: number,
+  votes: { match_id: string | number; score: number }[],
+): Promise<{
+  event: ApiEvent;
+  votes_summary: ApiVotesSummary;
+  user_votes: Record<string, number>;
+}> {
+  return request(`/api/events/${eventId}/votes`, {
+    method: 'POST',
+    headers: { 'X-User-Id': String(userId) },
+    body: JSON.stringify({ votes }),
   });
 }
 

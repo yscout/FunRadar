@@ -10,8 +10,15 @@ class GenerateActivitySuggestionsJob < ApplicationJob
     return if matches.blank?
 
     ActiveRecord::Base.transaction do
-      event.activity_suggestions.create!(payload: matches, model_name: "gpt-4.1")
-      event.update!(status: :ready, ai_generated_at: Time.current, ai_summary: { matches: matches })
+      event.match_votes.destroy_all
+      event.activity_suggestions.create!(payload: matches, model_name: "gpt-5-mini")
+      event.update!(
+        status: :ready,
+        ai_generated_at: Time.current,
+        ai_summary: { matches: matches },
+        final_match: {},
+        completed_at: nil
+      )
     end
   rescue StandardError => error
     Rails.logger.error("GenerateActivitySuggestionsJob failed for event=#{event_id}: #{error.class} #{error.message}")

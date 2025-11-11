@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_29_185247) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_11_204851) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -26,7 +26,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_29_185247) do
   create_table "events", force: :cascade do |t|
     t.datetime "ai_generated_at"
     t.jsonb "ai_summary", default: {}, null: false
+    t.datetime "completed_at"
     t.datetime "created_at", null: false
+    t.jsonb "final_match", default: {}, null: false
     t.text "notes"
     t.bigint "organizer_id", null: false
     t.uuid "share_token", default: -> { "gen_random_uuid()" }, null: false
@@ -52,6 +54,19 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_29_185247) do
     t.index ["event_id", "invitee_id"], name: "index_invitations_on_event_and_invitee", unique: true, where: "(invitee_id IS NOT NULL)"
     t.index ["event_id"], name: "index_invitations_on_event_id"
     t.index ["invitee_id"], name: "index_invitations_on_invitee_id"
+  end
+
+  create_table "match_votes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_id", null: false
+    t.bigint "invitation_id", null: false
+    t.string "match_id", null: false
+    t.integer "score", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "match_id"], name: "index_match_votes_on_event_id_and_match_id"
+    t.index ["event_id"], name: "index_match_votes_on_event_id"
+    t.index ["invitation_id", "match_id"], name: "index_match_votes_on_invitation_id_and_match_id", unique: true
+    t.index ["invitation_id"], name: "index_match_votes_on_invitation_id"
   end
 
   create_table "preferences", force: :cascade do |t|
@@ -84,5 +99,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_29_185247) do
   add_foreign_key "events", "users", column: "organizer_id"
   add_foreign_key "invitations", "events"
   add_foreign_key "invitations", "users", column: "invitee_id"
+  add_foreign_key "match_votes", "events"
+  add_foreign_key "match_votes", "invitations"
   add_foreign_key "preferences", "invitations"
 end

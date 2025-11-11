@@ -2,6 +2,7 @@ class Invitation < ApplicationRecord
   belongs_to :event
   belongs_to :invitee, class_name: "User", optional: true
   has_one :preference, dependent: :destroy
+  has_many :match_votes, dependent: :destroy
 
   enum :role, { organizer: 0, participant: 1 }, default: :participant
   enum :status, { pending: 0, submitted: 1 }, default: :pending

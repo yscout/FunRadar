@@ -40,6 +40,13 @@ export function HomeScreen({
     [events],
   );
 
+  const activeEvents = sortedEvents.filter((event) => event.status !== 'completed');
+  const completedEvents = sortedEvents.filter((event) => event.status === 'completed');
+  const pendingInvitations = useMemo(
+    () => invitations.filter((inv) => inv.status === 'pending'),
+    [invitations],
+  );
+
   return (
     <div className="h-full min-h-[700px] md:min-h-[800px] bg-white flex flex-col">
       <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 md:p-8 pb-8 md:pb-12 rounded-b-3xl">
@@ -91,9 +98,9 @@ export function HomeScreen({
             </div>
           )}
 
-          {invitations.length > 0 && (
+          {pendingInvitations.length > 0 && (
             <div className="mb-6 space-y-3">
-              {invitations.map((inv) => (
+              {pendingInvitations.map((inv) => (
                 <Card key={inv.id} className="p-4 md:p-5 border-2">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
@@ -111,18 +118,49 @@ export function HomeScreen({
             </div>
           )}
 
+          {completedEvents.length > 0 && (
+            <div className="mb-8">
+              <h3 className="md:text-2xl mb-3">On Your Calendar</h3>
+              <div className="space-y-3">
+                {completedEvents.map((event) => (
+                  <Card key={`completed-${event.id}`} className="p-4 md:p-5 border-2 border-green-200">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex gap-3 items-start">
+                        <div className="text-3xl md:text-4xl">{event.final_match?.emoji || '✅'}</div>
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-green-600">Confirmed</div>
+                          <div className="md:text-lg font-semibold">
+                            {event.final_match?.title || event.title}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {event.final_match?.time || event.final_match?.location || 'Ready to go!'}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">Together</Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h3 className="md:text-2xl">Upcoming Events</h3>
             <Badge variant="secondary" className="rounded-full md:text-base md:px-4 md:py-1">
-              {sortedEvents.length}
+              {activeEvents.length}
             </Badge>
           </div>
 
-          {sortedEvents.length > 0 && !isNewUser ? (
+          {activeEvents.length > 0 && !isNewUser ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
-              {sortedEvents.map((event) => {
-                const isReady = event.status === 'ready';
-                const statusLabel = isReady ? 'Complete' : event.status === 'pending_ai' ? 'AI Matching' : 'Collecting';
+              {activeEvents.map((event) => {
+                const statusLabel =
+                  event.status === 'pending_ai'
+                    ? 'AI Matching'
+                    : event.status === 'ready'
+                    ? 'Rate Matches'
+                    : 'Collecting';
                 const createdAt = event.created_at ? new Date(event.created_at).toLocaleString() : '';
                 const responded = event.submitted_count ?? 0;
                 const total = event.participant_count ?? 0;
@@ -146,7 +184,7 @@ center justify-center text-2xl md:text-3xl flex-shrink-0">
                           <Badge
                             variant="secondary"
                             className={
-                              isReady
+                              event.status === 'ready'
                                 ? 'bg-green-100 text-green-700'
                                 : event.status === 'pending_ai'
                                 ? 'bg-blue-100 text-blue-700'

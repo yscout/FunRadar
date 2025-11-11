@@ -24,21 +24,16 @@ import {
   Clock,
 } from 'lucide-react';
 import type { FriendPreference } from '../App';
-import type { ApiEvent, ApiMatch } from '../api';
+import type { ApiEvent, ApiMatch, ApiVotesSummary } from '../api';
 
 interface EventDetailsScreenProps {
   event: ApiEvent;
   matchResults: ApiMatch[];
   preferences: FriendPreference[];
+  votesSummary?: ApiVotesSummary;
+  userVotes?: Record<string, number>;
+  onRate: (matchId: string | number, rating: number) => void;
   onBack: () => void;
-}
-
-interface MatchRating {
-  matchId: number;
-  userRating: number;
-  ratedCount: number;
-  averageRating: number;
-  totalFriends: number;
 }
 
 const formatTimeSlot = (timeSlot: string) => timeSlot.replace(' AM', 'a').replace(' PM', 'p');
@@ -47,50 +42,27 @@ export function EventDetailsScreen({
   event,
   matchResults,
   preferences,
+  votesSummary,
+  userVotes,
+  onRate,
   onBack,
 }: EventDetailsScreenProps) {
   const totalFriends = Math.max(preferences.length, 1);
   const [showPreferencesDialog, setShowPreferencesDialog] = useState(false);
-  const [ratings, setRatings] = useState<Record<number, MatchRating>>({});
+  const [ratings, setRatings] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const initial = matchResults.reduce((acc, match) => {
-      acc[match.id] = {
-        matchId: match.id,
-        userRating: 0,
-        ratedCount: match.votes || 0,
-        averageRating: Number((match.compatibility / 20).toFixed(1)),
-        totalFriends,
-      };
-      return acc;
-    }, {} as Record<number, MatchRating>);
-    setRatings(initial);
-  }, [matchResults, totalFriends]);
+    setRatings(
+      Object.entries(userVotes || {}).reduce<Record<string, number>>((acc, [matchId, score]) => {
+        acc[matchId] = score;
+        return acc;
+      }, {}),
+    );
+  }, [userVotes]);
 
-  const handleRate = (matchId: number, rating: number) => {
-    setRatings((prev) => {
-      const current = prev[matchId];
-      if (!current) return prev;
-
-      const alreadyRated = current.userRating > 0;
-      const adjustedRatedCount = alreadyRated ? current.ratedCount : current.ratedCount + 1;
-      const totalScore =
-        current.averageRating * current.ratedCount -
-        (alreadyRated ? current.userRating : 0) +
-        rating;
-      const averageRating =
-        adjustedRatedCount > 0 ? Number((totalScore / adjustedRatedCount).toFixed(1)) : rating;
-
-      return {
-        ...prev,
-        [matchId]: {
-          ...current,
-          userRating: rating,
-          ratedCount: adjustedRatedCount,
-          averageRating,
-        },
-      };
-    });
+  const handleRate = (matchId: string | number, rating: number) => {
+    setRatings((prev) => ({ ...prev, [String(matchId)]: rating }));
+    onRate(matchId, rating);
   };
 
   return (
@@ -105,7 +77,9 @@ export function EventDetailsScreen({
             <div className="text-5xl md:text-6xl mb-3 md:mb-4">🎉</div>
             <h2 className="text-white mb-2 md:text-3xl">{event.title}</h2>
             <p className="text-white/90 md:text-lg">
-              Results are in! Here's what the group matched on
+              {event.status === 'completed'
+                ? 'Everyone voted! Here is your final pick.'
+                : 'Results are in! Rate the ideas with your friends.'}
             </p>
           </div>
         </div>
@@ -113,6 +87,21 @@ export function EventDetailsScreen({
 
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+          {event.status === 'completed' && event.final_match && (
+            <Card className="p-4 md:p-6 border-2 border-green-200">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="text-4xl md:text-5xl">{event.final_match.emoji || '✅'}</div>
+                <div>
+                  <div className="text-xs text-green-600 uppercase tracking-wide">Final pick</div>
+                  <div className="md:text-xl font-semibold">{event.final_match.title}</div>
+                  <div className="text-gray-500">
+                    {event.final_match.time || event.final_match.location || 'Ready to go'}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {matchResults.length === 0 ? (
             <Card className="p-6 text-center border-2">
               <p className="text-gray-600 md:text-lg">
@@ -122,101 +111,65 @@ export function EventDetailsScreen({
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {matchResults.map((match, index) => {
-                const rating =
-                  ratings[match.id] || {
-                    matchId: match.id,
-                    userRating: 0,
-                    ratedCount: match.votes || 0,
-                    averageRating: Number((match.compatibility / 20).toFixed(1)),
-                    totalFriends,
-                  };
+              {matchResults.map((match) => {
+                const summary = votesSummary?.[String(match.id)];
+                const ratingsCount = summary?.ratings_count ?? match.votes ?? 0;
+                const totalScore = summary?.total_score ?? 0;
+                const userScore = ratings[String(match.id)] ?? 0;
 
                 return (
-                  <Card
-                    key={match.id}
-                    className={`overflow-hidden border-2 h-full ${
-                      index === 0
-                        ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 md:col-span-2'
-                        : 'border-gray-200'
-                    }`}
-                  >
-                    {index === 0 && (
-                      <div className="bg-gradient-to-r from-yellow-400 to-orange-400 px-4 py-2 flex items-center justify-center gap-2">
-                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                        <span className="text-white text-sm md:text-base">Top Match</span>
-                      </div>
-                    )}
-
-                    <div className="flex gap-4 p-4 md:p-6">
-                      <div className="relative flex-shrink-0">
-                        <ImageWithFallback
-                          src={match.image}
-                          alt={match.title}
-                          className={`object-cover rounded-xl ${
-                            index === 0 ? 'w-32 h-32' : 'w-24 h-24'
-                          }`}
-                        />
-                        <div className="absolute -top-2 -right-2 bg-purple-500 rounded-full flex items-center justify-center text-white
-shadow-lg w-10 h-10 md:w-12 md:h-12 md:text-lg">
-                          {match.compatibility}%
+                  <Card key={match.id} className="p-4 md:p-6 border-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="text-3xl">{match.emoji}</div>
+                        <div>
+                          <div className="md:text-xl font-semibold">{match.title}</div>
+                          <div className="text-sm text-gray-500">{match.location}</div>
                         </div>
                       </div>
+                      <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
+                        <Sparkles className="w-4 h-4" />
+                        {match.compatibility}% match
+                      </Badge>
+                    </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <span className="text-2xl md:text-3xl">{match.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="mb-1 md:text-2xl">{match.title}</h3>
-                            <p className="text-sm text-gray-600 line-clamp-2 md:text-base">
-                              {match.description}
-                            </p>
+                    <ImageWithFallback
+                      src={match.image}
+                      alt={match.title}
+                      className="w-full h-40 md:h-52 rounded-2xl object-cover mb-4"
+                    />
+
+                    <div className="space-y-2 text-sm md:text-base text-gray-600 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {match.time}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        {match.price}
+                      </div>
+                      <p className="text-gray-700">{match.description}</p>
+                    </div>
+
+                    <StarRating
+                      matchId={match.id}
+                      userRating={userScore}
+                      onRate={handleRate}
+                      disabled={event.status === 'completed'}
+                    />
+
+                    <div className="mt-4 bg-gray-50 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-gray-500">Group voting progress</div>
+                          <div className="text-xs text-gray-400">
+                            {ratingsCount} of {totalFriends} friends rated
                           </div>
                         </div>
-
-                        <div className="space-y-1 text-sm text-gray-600 mb-3 md:text-base">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span className="truncate">{match.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>{match.time}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" />
-                            <span>{match.price}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                            <Users className="w-3 h-3 mr-1" />
-                            {rating.ratedCount} voted
-                          </Badge>
-                        </div>
-
-                        <div className="mt-4 space-y-3">
-                          <StarRating
-                            matchId={match.id}
-                            userRating={rating.userRating}
-                            onRate={handleRate}
-                          />
-                          <div className="flex items-center justify-between text-sm md:text-base">
-                            <div className="flex items-center gap-1">
-                              <Star className="fill-yellow-400 text-yellow-400 w-4 h-4" />
-                              <span className="text-gray-900">{rating.averageRating} ★</span>
-                              <span className="text-gray-500 ml-1">
-                                from {rating.ratedCount} friends
-                              </span>
-                            </div>
-                          </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-lg">{totalScore}</div>
                           <Progress
-                            value={
-                              rating.totalFriends
-                                ? Math.min((rating.ratedCount / rating.totalFriends) * 100, 100)
-                                : 0
-                            }
+                            value={totalFriends ? Math.min((ratingsCount / totalFriends) * 100, 100) : 0}
                             className="h-1.5"
                           />
                         </div>

@@ -3,8 +3,9 @@ class Event < ApplicationRecord
   has_many :invitations, dependent: :destroy
   has_many :preferences, through: :invitations
   has_many :activity_suggestions, dependent: :destroy
+  has_many :match_votes, dependent: :destroy
 
-  enum :status, { collecting: 0, pending_ai: 1, ready: 2 }, default: :collecting
+  enum :status, { collecting: 0, pending_ai: 1, ready: 2, completed: 3 }, default: :collecting
 
   validates :title, presence: true, length: { maximum: 120 }
   validates :share_token, presence: true, uniqueness: true
@@ -44,6 +45,47 @@ class Event < ApplicationRecord
     preferences.includes(:invitation).map(&:to_api)
   end
 
+  def current_match_ids
+    latest_suggestions&.matches&.map { |match| match["id"].to_s } || []
+  end
+
+  def voting_invitations
+    invitations
+  end
+
+  def votes_summary
+    current_match_ids.each_with_object({}) do |match_id, acc|
+      scoped = match_votes.where(match_id:)
+      acc[match_id] = {
+        total_score: scoped.sum(:score),
+        ratings_count: scoped.count
+      }
+    end
+  end
+
+  def finalize_if_ready!
+    return unless ready?
+    return if completed?
+
+    match_ids = current_match_ids
+    return if match_ids.blank?
+
+    everyone_voted = voting_invitations.all? do |invitation|
+      invitation.submitted? && match_ids.all? { |match_id| invitation.match_votes.exists?(match_id:) }
+    end
+    return unless everyone_voted
+
+    winning_id, _score = match_ids.map { |match_id| [match_id, match_votes.where(match_id:).sum(:score)] }
+                                  .max_by { |_, score| score }
+    winning_match = latest_suggestions&.matches&.find { |match| match["id"].to_s == winning_id.to_s }
+
+    update!(
+      status: :completed,
+      final_match: winning_match || {},
+      completed_at: Time.current
+    )
+  end
+
   def to_api(include_progress: true, include_results: true)
     payload = {
       id: id,
@@ -69,8 +111,11 @@ class Event < ApplicationRecord
       suggestion = latest_suggestions
       payload[:matches] = suggestion&.payload || []
       payload[:ai_generated_at] = ai_generated_at
+      payload[:votes_summary] = votes_summary
     end
 
+    payload[:final_match] = final_match if final_match.present?
+    payload[:completed_at] = completed_at
     payload[:preferences] = aggregate_preferences if include_progress || include_results
 
     payload

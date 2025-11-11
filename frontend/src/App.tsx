@@ -14,11 +14,14 @@ import {
   fetchInvitationByToken,
   submitPreference,
   updateUser,
+  fetchEvents,
+  submitMatchVotes,
   type ApiEvent,
   type ApiInvitation,
   type ApiMatch,
   type ApiProgressEntry,
   type ApiPreferenceSummary,
+  type ApiVotesSummary,
   type SessionResponse,
 } from './api';
 import { Toaster } from './components/ui/sonner';
@@ -82,6 +85,8 @@ type LoadedEvent = {
   progress?: ApiProgressEntry[];
   matches?: ApiMatch[];
   preferences?: FriendPreference[];
+  votesSummary?: ApiVotesSummary;
+  userVotes?: Record<string, number>;
 };
 
 const mapPreferences = (prefs?: ApiPreferenceSummary[]): FriendPreference[] => {
@@ -89,10 +94,7 @@ const mapPreferences = (prefs?: ApiPreferenceSummary[]): FriendPreference[] => {
     name: pref.name || 'Friend',
     availableTimes: pref.available_times || [],
     activities: pref.activities || [],
-    budgetRange: [
-      pref.budget_min ?? 0,
-      pref.budget_max ?? 0,
-    ] as [number, number],
+    budgetRange: [pref.budget_min ?? 0, pref.budget_max ?? 0] as [number, number],
     ideas: pref.ideas || '',
   }));
 };
@@ -114,6 +116,24 @@ function App() {
   const [loadedEvent, setLoadedEvent] = useState<LoadedEvent | null>(null);
   const [isEventLoading, setIsEventLoading] = useState(false);
 
+  const dedupeEvents = useCallback((list: ApiEvent[]) => {
+    const map = new Map<number, ApiEvent>();
+    list.forEach((event) => map.set(event.id, event));
+    return Array.from(map.values());
+  }, []);
+
+  const setEventsFromResponse = useCallback(
+    (res: SessionResponse) => {
+      const merged = dedupeEvents([
+        ...(res.events || []),
+        ...(res.organized_events || []),
+        ...(res.participating_events || []),
+      ]);
+      setEvents(merged);
+    },
+    [dedupeEvents],
+  );
+
   const navigateToScreen = useCallback((screen: Screen) => {
     setCurrentScreen(screen);
     window.history.pushState({ screen }, '', `#${screen}`);
@@ -133,23 +153,26 @@ function App() {
     [navigateToScreen],
   );
 
-  const bootstrapSession = useCallback((res: SessionResponse) => {
-    setUserId(res.user.id);
-    setUserData((prev) => ({
-      ...prev,
-      name: res.user.name,
-      locationPermission:
-        typeof res.user.location_permission === 'boolean'
-          ? res.user.location_permission
-          : prev.locationPermission,
-      location: res.user.location || prev.location,
-    }));
-    setEvents(res.organized_events || []);
-    setInvitations(res.invitations || []);
-    setIsNewUser(!!res.first_time);
-    localStorage.setItem('funradar_name', res.user.name);
-    localStorage.setItem('funradar_user_id', String(res.user.id));
-  }, []);
+  const bootstrapSession = useCallback(
+    (res: SessionResponse) => {
+      setUserId(res.user.id);
+      setUserData((prev) => ({
+        ...prev,
+        name: res.user.name,
+        locationPermission:
+          typeof res.user.location_permission === 'boolean'
+            ? res.user.location_permission
+            : prev.locationPermission,
+        location: res.user.location || prev.location,
+      }));
+      setEventsFromResponse(res);
+      setInvitations(res.invitations || []);
+      setIsNewUser(!!res.first_time);
+      localStorage.setItem('funradar_name', res.user.name);
+      localStorage.setItem('funradar_user_id', String(res.user.id));
+    },
+    [setEventsFromResponse],
+  );
 
   const persistLocation = useCallback(async (id: number, data: UserData) => {
     if (typeof data.locationPermission === 'undefined') return;
@@ -206,7 +229,6 @@ function App() {
     }
   }, [userId, handleSessionResponse]);
 
-  // Auto-reload when a new deploy is detected by polling version.txt
   const currentVersionRef = useRef<string | null>(null);
   useEffect(() => {
     let isMounted = true;
@@ -223,7 +245,7 @@ function App() {
           window.location.reload();
         }
       } catch {
-        // ignore network/transient errors
+        // ignore
       }
     }
     checkVersionOnce();
@@ -302,51 +324,155 @@ function App() {
         invites: (data.invitedFriends || []).map((name) => ({ name })),
       };
       const { event } = await apiCreateEvent(userId, payload);
-      setEvents((prev) => [event, ...prev]);
+      setEvents((prev) => dedupeEvents([event, ...prev]));
       toast.success('Invites sent!');
       navigateToScreen('home');
     } catch (error) {
       console.error('Error creating event:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unable to create event';
-      toast.error(errorMessage.includes('Unauthorized') ? 'Please log in to create an event' : 'Unable to create event');
+      toast.error(
+        errorMessage.includes('Unauthorized')
+          ? 'Please log in to create an event'
+          : 'Unable to create event',
+      );
     }
   };
+
+  const refreshEvents = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { events: fetched } = await fetchEvents(userId);
+      setEvents(dedupeEvents(fetched));
+    } catch {
+      // ignore
+    }
+  }, [dedupeEvents, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const id = window.setInterval(() => {
+      refreshEvents();
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, [refreshEvents, userId]);
+
+
+  const updateEventList = useCallback(
+    (next: ApiEvent) => {
+      setEvents((prev) => dedupeEvents(prev.map((event) => (event.id === next.id ? next : event))));
+    },
+    [dedupeEvents],
+  );
+
+  const loadEventResults = useCallback(
+    async (eventId: number) => {
+      if (!userId) return;
+      setIsEventLoading(true);
+      try {
+        const { event: eventPayload, matches, votes_summary, user_votes } = await fetchEventResults(
+          userId,
+          eventId,
+        );
+        updateEventList(eventPayload);
+        setLoadedEvent({
+          event: eventPayload,
+          matches,
+          votesSummary: votes_summary,
+          userVotes: user_votes,
+          preferences: mapPreferences(eventPayload.preferences),
+        });
+        navigateToScreen('eventDetails');
+      } catch {
+        toast.error('Unable to load event');
+      } finally {
+        setIsEventLoading(false);
+      }
+    },
+    [navigateToScreen, updateEventList, userId],
+  );
+
+  useEffect(() => {
+    if (currentScreen !== 'eventPending') return;
+    if (!loadedEvent || !userId) return;
+    if (['ready', 'completed'].includes(loadedEvent.event.status)) return;
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const pollProgress = async () => {
+      try {
+        const { event: latestEvent, progress } = await fetchEventProgress(userId, loadedEvent.event.id);
+        if (cancelled) return;
+
+        updateEventList(latestEvent);
+        setLoadedEvent((prev) =>
+          prev && prev.event.id === latestEvent.id
+            ? {
+                event: latestEvent,
+                progress,
+                preferences: mapPreferences(latestEvent.preferences),
+              }
+            : prev,
+        );
+
+        if (['ready', 'completed'].includes(latestEvent.status)) {
+          await loadEventResults(latestEvent.id);
+        }
+      } catch {
+        // swallow transient errors; next poll will retry
+      }
+    };
+
+    pollProgress();
+    intervalId = window.setInterval(pollProgress, 5000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [currentScreen, loadedEvent, loadEventResults, updateEventList, userId]);
 
   const openEvent = useCallback(
     async (event: ApiEvent) => {
       if (!userId) return;
       setIsEventLoading(true);
       try {
-        if (event.status === 'ready') {
-          const { event: eventPayload, matches } = await fetchEventResults(userId, event.id);
-          setLoadedEvent({
-            event: eventPayload,
-            matches,
-            preferences: mapPreferences(eventPayload.preferences),
-          });
-          navigateToScreen('eventDetails');
-        } else {
-          const { event: eventPayload, progress } = await fetchEventProgress(userId, event.id);
-          setLoadedEvent({
-            event: eventPayload,
-            progress,
-            preferences: mapPreferences(eventPayload.preferences),
-          });
-          navigateToScreen('eventPending');
+        if (event.status === 'ready' || event.status === 'completed') {
+          await loadEventResults(event.id);
+          return;
         }
-      } catch (error) {
+
+        const { event: eventPayload, progress } = await fetchEventProgress(userId, event.id);
+        updateEventList(eventPayload);
+
+        if (eventPayload.status === 'ready' || eventPayload.status === 'completed') {
+          await loadEventResults(eventPayload.id);
+          return;
+        }
+
+        setLoadedEvent({
+          event: eventPayload,
+          progress,
+          preferences: mapPreferences(eventPayload.preferences),
+        });
+        navigateToScreen('eventPending');
+      } catch {
         toast.error('Unable to load event');
       } finally {
         setIsEventLoading(false);
       }
     },
-    [navigateToScreen, userId],
+    [loadEventResults, navigateToScreen, updateEventList, userId],
   );
 
   const handleInvitationSubmit = async (
     pref: FriendPreference,
     invitation: ApiInvitation,
   ): Promise<void> => {
+    if (!userId) return;
+
     try {
       await submitPreference(
         invitation.access_token,
@@ -359,18 +485,52 @@ function App() {
         },
         userId,
       );
+
+      const { event: eventPayload, progress } = await fetchEventProgress(userId, invitation.event.id);
+      updateEventList(eventPayload);
+
       toast.success('Preferences submitted!');
       setInvitations((prev) => prev.filter((inv) => inv.id !== invitation.id));
       setActiveInvitation(null);
-      navigateToScreen('home');
-    } catch (error) {
+      setLoadedEvent({
+        event: eventPayload,
+        progress,
+        preferences: mapPreferences(eventPayload.preferences),
+      });
+      navigateToScreen('eventPending');
+    } catch {
       toast.error('Unable to submit preferences');
     }
   };
 
+  const handleVote = useCallback(
+    async (eventId: number, matchId: string | number, score: number) => {
+      if (!userId) return;
+      try {
+        await submitMatchVotes(userId, eventId, [{ match_id: matchId, score }]);
+        const { event: updatedEvent, matches, votes_summary, user_votes } = await fetchEventResults(
+          userId,
+          eventId,
+        );
+        setLoadedEvent({
+          event: updatedEvent,
+          matches,
+          votesSummary: votes_summary,
+          userVotes: user_votes,
+          preferences: mapPreferences(updatedEvent.preferences),
+        });
+        updateEventList(updatedEvent);
+      } catch {
+        toast.error('Unable to record your rating');
+      }
+    },
+    [updateEventList, userId],
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-sky-100 to-peach-100 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px] relative">
+      <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px]
+relative">
         {currentScreen === 'intro' && (
           <IntroScreen onGetStarted={() => navigateToScreen('onboarding')} />
         )}
@@ -430,7 +590,13 @@ function App() {
             event={loadedEvent.event}
             matchResults={loadedEvent.matches || []}
             preferences={loadedEvent.preferences || []}
-            onBack={() => navigateToScreen('home')}
+            votesSummary={loadedEvent.votesSummary}
+            userVotes={loadedEvent.userVotes}
+            onRate={(matchId, rating) => handleVote(loadedEvent.event.id, matchId, rating)}
+            onBack={() => {
+              navigateToScreen('home');
+              refreshEvents();
+            }}
           />
         )}
 
@@ -439,7 +605,10 @@ function App() {
             eventTitle={loadedEvent.event.title}
             organizerName={loadedEvent.event.organizer?.name || userData.name}
             progress={loadedEvent.progress || loadedEvent.event.progress || []}
-            onBack={() => navigateToScreen('home')}
+            onBack={() => {
+              navigateToScreen('home');
+              refreshEvents();
+            }}
           />
         )}
       </div>

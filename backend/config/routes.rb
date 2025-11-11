@@ -13,6 +13,7 @@ Rails.application.routes.draw do
         get :progress
         get :results
       end
+      resource :votes, only: :create, controller: "event_votes"
     end
     resources :invitations, param: :token, only: [:show, :update] do
       resource :preference, only: [:show, :create, :update]
