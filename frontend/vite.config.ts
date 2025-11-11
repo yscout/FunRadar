@@ -54,6 +54,28 @@
     outDir: '../backend/public',
     assetsDir: 'vite-assets',
     emptyOutDir: false, // Don't delete Rails' existing public files
+    // Ensure proper cache busting with content hashes
+    rollupOptions: {
+      output: {
+        // Add content hash to filenames for cache busting
+        entryFileNames: 'vite-assets/[name]-[hash].js',
+        chunkFileNames: 'vite-assets/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          if (!assetInfo.name) {
+            return `vite-assets/[name]-[hash].[ext]`;
+          }
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return `vite-assets/[name]-[hash].[ext]`;
+          }
+          if (/css/i.test(ext)) {
+            return `vite-assets/[name]-[hash].[ext]`;
+          }
+          return `vite-assets/[name]-[hash].[ext]`;
+        },
+      },
+    },
   },
   server: {
     port: 3000,

@@ -7,7 +7,19 @@ class ApplicationController < ActionController::Base
 
   # Serve React app's index.html for all frontend routes
   def fallback_index_html
-    response.headers['Cache-Control'] = 'no-store'
+    # Prevent caching of HTML to ensure users get latest version
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    # Add ETag based on version file if it exists
+    version_file = Rails.public_path.join('version.txt')
+    if version_file.exist?
+      version = version_file.read.strip
+      response.headers['ETag'] = %("#{version}")
+      response.headers['X-App-Version'] = version
+    end
+    
     render file: Rails.public_path.join('index.html'), layout: false
   end
 end

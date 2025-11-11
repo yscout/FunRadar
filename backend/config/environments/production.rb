@@ -18,8 +18,21 @@ Rails.application.configure do
   # Enable serving static files from the `public` folder (required for serving React app)
   config.public_file_server.enabled = true
   
-  # Cache assets for far-future expiry since they are all digest stamped.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
+  # Smart cache control: long cache for hashed assets (JS/CSS with content hash in filename),
+  # short cache for HTML and other files that may change
+  config.public_file_server.headers = lambda do |path, request|
+    # Vite assets have hashes in their filenames (e.g., index-abc123.js)
+    # These can be cached forever since the hash changes when content changes
+    if path.match?(/vite-assets\/.*-[a-f0-9]{8,}\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/i)
+      { "cache-control" => "public, max-age=#{1.year.to_i}, immutable" }
+    # HTML files should have short cache to allow updates
+    elsif path.match?(/\.html?$/i)
+      { "cache-control" => "public, max-age=0, must-revalidate" }
+    # Other static assets get moderate cache
+    else
+      { "cache-control" => "public, max-age=#{1.hour.to_i}" }
+    end
+  end
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
