@@ -8,7 +8,8 @@ module Ai
       location (string), price (string), time (string), emoji (string),
       votes (integer), description (string).
       Do not include any additional keys. Provide 3 to 5 matches.
-      Focus on variety and align choices with the shared availability, activities, budgets, and ideas.
+      Focus on variety and align choices with the shared availability, activities, budgets, ideas, and locations.
+      The location is not a strict constraint. The choices should NOT be only close to a few participants but very far from others.
     PROMPT
 
     FALLBACK_MATCHES = [
@@ -77,7 +78,8 @@ module Ai
         event: {
             title: @event.title,
             notes: @event.notes,
-            organizer: @event.organizer.name
+            organizer: @event.organizer.name,
+            location: @event.organizer.location_hash
         },
         attendees: preferences.map do |preference|
           {
@@ -86,11 +88,23 @@ module Ai
             activities: preference.activities,
             budget_min: preference.budget_min,
             budget_max: preference.budget_max,
-            ideas: preference.ideas
-          }
+            ideas: preference.ideas,
+            location: preference_location(preference)
+        }.compact
         end,
         summary: aggregated_preferences
       }
+    end
+
+    def preference_location(preference)
+      if preference.location_latitude && preference.location_longitude
+        {
+          latitude: preference.location_latitude.to_f,
+          longitude: preference.location_longitude.to_f
+        }
+      else
+        preference.invitation.invitee&.location_hash
+      end
     end
 
     def aggregated_preferences
@@ -98,12 +112,14 @@ module Ai
       all_activities = preferences.flat_map(&:activities)
       mins = preferences.map(&:budget_min).compact
       maxes = preferences.map(&:budget_max).compact
+      coords = preferences.filter_map { preference_location(_1) }
 
       {
         top_time_slots: tally(all_times),
         top_activities: tally(all_activities),
-        budget_range: mins.any? && maxes.any? ? { min: mins.min, max: maxes.max } : nil
-      }
+        budget_range: mins.any? && maxes.any? ? { min: mins.min, max: maxes.max } : nil,
+        locations: coords.presence
+      }.compact
     end
 
     def tally(values)
@@ -119,7 +135,7 @@ module Ai
     def request_suggestions
       response = @client.chat(
         parameters: {
-          model: "gpt-4.1",
+          model: "gpt-5-mini",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: request_payload.to_json }
