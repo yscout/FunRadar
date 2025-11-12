@@ -79,6 +79,16 @@ CUCUMBER_ENABLE_COVERAGE=false bundle exec cucumber # disable coverage if needed
 
 Rerun ```bin/dev``` (or bin/rails server plus npm run build:watch) afterward if you need the server up while working through scenarios.
 
+Test Coverage Summary
+
+RSpec Tests (Unit & Integration)
+187 examples, 0 failures
+
+Cucumber Tests (User Stories/BDD)
 97 scenarios (97 passed)
 611 steps (611 passed)
-Line Coverage: 97.26% (390 / 401)
+
+Coverage Metrics
+Line Coverage: 98.71% (382 / 387 lines)
+Branch Coverage: 88.79% (103 / 116 branches)
+
