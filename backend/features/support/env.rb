@@ -5,7 +5,21 @@
 # files.
 
 require 'cucumber/rails'
-require_relative "../../spec/spec_helper" if ENV["ENABLE_COVERAGE"] == "true"
+require 'rspec/rails'
+
+# Load SimpleCov for coverage (without full RSpec configuration)
+if ENV["ENABLE_COVERAGE"] == "true"
+  require 'simplecov'
+  SimpleCov.start 'rails' do
+    add_filter '/spec/'
+    add_filter '/test/'
+    add_filter '/config/'
+    add_filter '/vendor/'
+    add_group 'Controllers', 'app/controllers'
+    add_group 'Models', 'app/models'
+    add_group 'Services', 'app/services'
+  end
+end
 
 # Capybara defaults to CSS3 selectors rather than XPath.
 # If you'd prefer to use XPath, just uncomment this line and adjust any
@@ -66,8 +80,21 @@ require 'rspec/mocks'
 
 World(RSpec::Mocks::ExampleMethods)
 
+# Include Rack::Test for making HTTP requests in steps
+require 'rack/test'
+World(Rack::Test::Methods)
+World(RSpec::Matchers)
+World(RSpec::Rails::Matchers)
+
+def app
+  Rails.application
+end
+
 Before do
   RSpec::Mocks.setup
+  ActiveJob::Base.queue_adapter = :test
+  ActiveJob::Base.queue_adapter.enqueued_jobs.clear
+  ActiveJob::Base.queue_adapter.performed_jobs.clear
 end
 
 After do

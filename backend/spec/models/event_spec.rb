@@ -34,7 +34,7 @@ RSpec.describe Event, type: :model do
   end
 
   describe 'enums' do
-    it { should define_enum_for(:status).with_values(collecting: 0, pending_ai: 1, ready: 2).with_default(:collecting) }
+    it { should define_enum_for(:status).with_values(collecting: 0, pending_ai: 1, ready: 2, completed: 3).with_default(:collecting) }
   end
 
   describe 'callbacks' do

@@ -130,6 +130,10 @@ When('{string} submits the last preferences:') do |name, table|
     budget_max: prefs['budget_max'].to_i,
     ideas: prefs['ideas']
   )
+  
+  # Mark invitation as submitted and trigger AI processing if all are submitted
+  invitation.mark_submitted!
+  @event.reload.enqueue_ai_if_ready!
 end
 
 When('I try to access an invitation with token {string}') do |token|

@@ -9,6 +9,7 @@ Given('an event {string} exists organized by {string}') do |title, organizer_nam
   organizer = User.find_by(name: organizer_name) || create(:user, name: organizer_name)
   @event = create(:event, title: title, organizer: organizer)
   @organizer = organizer
+  @created_event = @event  # For API controller step compatibility
   # Create organizer invitation
   create(:invitation, event: @event, invitee: organizer, invitee_name: organizer.name, role: :organizer)
 end
@@ -239,46 +240,29 @@ When('the organizer adds a new participant {string}') do |name|
 end
 
 Then('the event should be created successfully') do
-  @event = Event.create!(
-    title: @event_params['title'] || 'New Hangout',
-    notes: @event_params['notes'],
-    organizer: @current_user
-  )
+
+  expect(@event).to be_present, "Event should have been created by When steps"
+  expect(@event).to be_persisted, "Event should be saved to database"
+  expect(@event.organizer).to eq(@current_user), "Organizer should be set correctly"
   
-  # Create organizer invitation with preferences
-  organizer_invitation = @event.invitations.create!(
-    role: :organizer,
-    invitee: @current_user,
-    invitee_name: @current_user.name,
-    status: :submitted,
-    responded_at: Time.current
-  )
+  # Verify organizer invitation was created
+  organizer_invitation = @event.invitations.organizer.first
+  expect(organizer_invitation).to be_present, "Organizer invitation should exist"
+  expect(organizer_invitation.invitee).to eq(@current_user)
   
   if @preference_params
-    organizer_invitation.create_preference!(@preference_params)
+    expect(organizer_invitation.preference).to be_present, "Organizer preferences should be saved"
   end
   
-  # Create participant invitations
   if @invited_friends
-    @invited_friends.each do |friend_name|
-      @event.invitations.create!(
-        role: :participant,
-        invitee_name: friend_name
-      )
-    end
+    expect(@event.invitations.participant.count).to eq(@invited_friends.count),
+      "Should have created invitations for all invited friends"
   end
   
   if @invited_friends_with_emails
-    @invited_friends_with_emails.each do |friend|
-      @event.invitations.create!(
-        role: :participant,
-        invitee_name: friend['name'],
-        invitee_email: friend['email']
-      )
-    end
+    expect(@event.invitations.participant.count).to eq(@invited_friends_with_emails.count),
+      "Should have created invitations for all invited friends with emails"
   end
-  
-  expect(@event).to be_persisted
 end
 
 Then('I should be the organizer') do
