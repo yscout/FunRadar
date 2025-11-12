@@ -1,19 +1,8 @@
 {
   "name": "funradar",
   "version": "1.0.0",
-  "description": "FunRadar application",
-  "engines": {
-    "node": "20.x",
-    "npm": "10.x"
-  },
   "scripts": {
-    "heroku-postbuild": "npm --prefix frontend install --no-audit --no-fund && cd frontend && npm run build && cd .. && ( echo ${SOURCE_VERSION:-$(date +%s)} > backend/public/version.txt )",
+    "heroku-postbuild": "cd backend && yarn install --production=false && bundle exec rails assets:precompile",
     "start": "cd backend && bundle exec rails server -p $PORT"
-  },
-  "cacheDirectories": [
-    "frontend/node_modules"
-  ],
-  "devDependencies": {
-    "vite": "^5.0.0"
   }
 }

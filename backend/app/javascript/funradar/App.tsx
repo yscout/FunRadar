@@ -1,0 +1,631 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { IntroScreen } from './components/IntroScreen';
+import { OnboardingScreen } from './components/OnboardingScreen';
+import { HomeScreen } from './components/HomeScreen';
+import { CreateEventScreen } from './components/CreateEventScreen';
+import { FriendsSubmissionScreen } from './components/FriendsSubmissionScreen';
+import { EventDetailsScreen } from './components/EventDetailsScreen';
+import { EventPendingScreen } from './components/EventPendingScreen';
+import {
+  createSession,
+  createEvent as apiCreateEvent,
+  fetchEventProgress,
+  fetchEventResults,
+  fetchInvitationByToken,
+  submitPreference,
+  updateUser,
+  fetchEvents,
+  fetchInvitations,
+  submitMatchVotes,
+  type ApiEvent,
+  type ApiInvitation,
+  type ApiMatch,
+  type ApiProgressEntry,
+  type ApiPreferenceSummary,
+  type ApiVotesSummary,
+  type SessionResponse,
+} from './api';
+import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
+
+type Screen =
+  | 'intro'
+  | 'onboarding'
+  | 'home'
+  | 'createEvent'
+  | 'eventDetails'
+  | 'eventPending'
+  | 'inviteResponse';
+
+const getScreenFromHash = (): Screen => {
+  const hash = window.location.hash.slice(1);
+  const validScreens: Screen[] = [
+    'intro',
+    'onboarding',
+    'home',
+    'createEvent',
+    'eventDetails',
+    'eventPending',
+    'inviteResponse',
+  ];
+  return validScreens.includes(hash as Screen) ? (hash as Screen) : 'intro';
+};
+
+export interface UserData {
+  name: string;
+  nickname?: string;
+  avatar?: string;
+  interests?: string[];
+  availableTimes?: string[];
+  budget?: string;
+  locationPermission?: boolean;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export interface EventData {
+  availableTimes?: string[];
+  activityType?: string;
+  budgetRange?: [number, number];
+  notes?: string;
+  invitedFriends?: string[];
+}
+
+export interface FriendPreference {
+  name: string;
+  availableTimes: string[];
+  activities: string[];
+  budgetRange: [number, number];
+  ideas?: string;
+}
+
+type LoadedEvent = {
+  event: ApiEvent;
+  progress?: ApiProgressEntry[];
+  matches?: ApiMatch[];
+  preferences?: FriendPreference[];
+  votesSummary?: ApiVotesSummary;
+  userVotes?: Record<string, number>;
+};
+
+const mapPreferences = (prefs?: ApiPreferenceSummary[]): FriendPreference[] => {
+  return (prefs || []).map((pref) => ({
+    name: pref.name || 'Friend',
+    availableTimes: pref.available_times || [],
+    activities: pref.activities || [],
+    budgetRange: [pref.budget_min ?? 0, pref.budget_max ?? 0] as [number, number],
+    ideas: pref.ideas || '',
+  }));
+};
+
+function App() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>(getScreenFromHash());
+  const [userData, setUserData] = useState<UserData>({
+    name: '',
+    interests: [],
+    availableTimes: [],
+    budget: '',
+    locationPermission: false,
+  });
+  const [userId, setUserId] = useState<number | null>(null);
+  const [events, setEvents] = useState<ApiEvent[]>([]);
+  const [invitations, setInvitations] = useState<ApiInvitation[]>([]);
+  const [isNewUser, setIsNewUser] = useState<boolean>(false);
+  const [activeInvitation, setActiveInvitation] = useState<ApiInvitation | null>(null);
+  const [loadedEvent, setLoadedEvent] = useState<LoadedEvent | null>(null);
+  const [isEventLoading, setIsEventLoading] = useState(false);
+
+  const dedupeEvents = useCallback((list: ApiEvent[]) => {
+    const map = new Map<number, ApiEvent>();
+    list.forEach((event) => map.set(event.id, event));
+    return Array.from(map.values());
+  }, []);
+
+  const setEventsFromResponse = useCallback(
+    (res: SessionResponse) => {
+      const merged = dedupeEvents([
+        ...(res.events || []),
+        ...(res.organized_events || []),
+        ...(res.participating_events || []),
+      ]);
+      setEvents(merged);
+    },
+    [dedupeEvents],
+  );
+
+  const navigateToScreen = useCallback((screen: Screen) => {
+    setCurrentScreen(screen);
+    window.history.pushState({ screen }, '', `#${screen}`);
+  }, []);
+
+  const handlePostLoginNavigation = useCallback(
+    (invites: ApiInvitation[] = []) => {
+      const pending = invites.find((inv) => inv.status === 'pending');
+      const wantsInviteScreen = getScreenFromHash() === 'inviteResponse';
+      if (pending && wantsInviteScreen) {
+        setActiveInvitation(pending);
+        navigateToScreen('inviteResponse');
+        return;
+      }
+      navigateToScreen('home');
+    },
+    [navigateToScreen],
+  );
+
+  const bootstrapSession = useCallback(
+    (res: SessionResponse) => {
+      setUserId(res.user.id);
+      setUserData((prev) => ({
+        ...prev,
+        name: res.user.name,
+        locationPermission:
+          typeof res.user.location_permission === 'boolean'
+            ? res.user.location_permission
+            : prev.locationPermission,
+        location: res.user.location || prev.location,
+      }));
+      setEventsFromResponse(res);
+      setInvitations(res.invitations || []);
+      setIsNewUser(!!res.first_time);
+      localStorage.setItem('funradar_name', res.user.name);
+      localStorage.setItem('funradar_user_id', String(res.user.id));
+    },
+    [setEventsFromResponse],
+  );
+
+  const persistLocation = useCallback(async (id: number, data: UserData) => {
+    if (typeof data.locationPermission === 'undefined') return;
+    try {
+      await updateUser(id, {
+        location_permission: data.locationPermission,
+        location_latitude: data.location?.latitude,
+        location_longitude: data.location?.longitude,
+      });
+    } catch (error) {
+      console.warn('Unable to update user location', error);
+    }
+  }, []);
+
+  const handleSessionResponse = useCallback(
+    async (res: SessionResponse, onboardingPayload?: UserData) => {
+      bootstrapSession(res);
+      if (onboardingPayload) {
+        await persistLocation(res.user.id, onboardingPayload);
+      }
+      handlePostLoginNavigation(res.invitations || []);
+    },
+    [bootstrapSession, handlePostLoginNavigation, persistLocation],
+  );
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('funradar_name');
+    localStorage.removeItem('funradar_user_id');
+    setUserId(null);
+    setEvents([]);
+    setInvitations([]);
+    setUserData({
+      name: '',
+      interests: [],
+      availableTimes: [],
+      budget: '',
+      locationPermission: false,
+    });
+    setIsNewUser(false);
+    setActiveInvitation(null);
+    setLoadedEvent(null);
+    navigateToScreen('intro');
+  }, [navigateToScreen]);
+
+  useEffect(() => {
+    const storedName = localStorage.getItem('funradar_name');
+    if (storedName && !userId) {
+      createSession(storedName)
+        .then((res) => handleSessionResponse(res))
+        .catch(() => {
+          localStorage.removeItem('funradar_name');
+          localStorage.removeItem('funradar_user_id');
+        });
+    }
+  }, [userId, handleSessionResponse]);
+
+  const currentVersionRef = useRef<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    async function checkVersionOnce() {
+      try {
+        const res = await fetch(`/version.txt?ts=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const text = (await res.text()).trim();
+        if (!currentVersionRef.current) {
+          currentVersionRef.current = text;
+          return;
+        }
+        if (currentVersionRef.current && text && text !== currentVersionRef.current) {
+          window.location.reload();
+        }
+      } catch {
+        // ignore
+      }
+    }
+    checkVersionOnce();
+    const id = window.setInterval(() => {
+      if (!isMounted) return;
+      checkVersionOnce();
+    }, 15000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentScreen(getScreenFromHash());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleOnboardingComplete = (data: UserData) => {
+    setUserData(data);
+    createSession(data.name)
+      .then((res) => handleSessionResponse(res, data))
+      .catch(() => {
+        navigateToScreen('home');
+      });
+  };
+
+  useEffect(() => {
+    if (currentScreen !== 'inviteResponse') return;
+    if (activeInvitation && activeInvitation.event) return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invitation_token');
+    if (token) {
+      (async () => {
+        try {
+          const { invitation } = await fetchInvitationByToken(token, userId);
+          setActiveInvitation(invitation);
+        } catch {
+          toast.error('Invalid or expired invitation link');
+          navigateToScreen('home');
+        }
+      })();
+      return;
+    }
+    const pending = invitations.find((inv) => inv.status === 'pending');
+    if (pending) {
+      setActiveInvitation(pending);
+      return;
+    }
+
+    toast.info('No pending invitations found');
+    navigateToScreen('home');
+  }, [currentScreen, invitations, activeInvitation, navigateToScreen, userId]);
+
+  const handleCreateEvent = async (data: EventData) => {
+    try {
+      if (!userId) {
+        toast.error('Please log in to create an event');
+        return;
+      }
+
+      const title = data.activityType ? `${data.activityType} Hangout` : 'New Hangout';
+      const payload = {
+        title,
+        notes: data.notes,
+        organizer_preferences: {
+          available_times: data.availableTimes || [],
+          activities: data.activityType ? data.activityType.split(', ').filter(Boolean) : [],
+          budget_min: data.budgetRange ? data.budgetRange[0] : undefined,
+          budget_max: data.budgetRange ? data.budgetRange[1] : undefined,
+          ideas: data.notes || '',
+        },
+        invites: (data.invitedFriends || []).map((name) => ({ name })),
+      };
+      const { event } = await apiCreateEvent(userId, payload);
+      setEvents((prev) => dedupeEvents([event, ...prev]));
+      toast.success('Invites sent!');
+      navigateToScreen('home');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unable to create event';
+      toast.error(
+        errorMessage.includes('Unauthorized')
+          ? 'Please log in to create an event'
+          : 'Unable to create event',
+      );
+    }
+  };
+
+  const refreshEvents = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const [eventsResponse, invitationsResponse] = await Promise.all([
+        fetchEvents(userId),
+        fetchInvitations(userId),
+      ]);
+      setEvents(dedupeEvents(eventsResponse.events));
+      setInvitations(invitationsResponse.invitations || []);
+    } catch {
+      // ignore
+    }
+  }, [dedupeEvents, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const id = window.setInterval(() => {
+      refreshEvents();
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, [refreshEvents, userId]);
+
+  const updateEventList = useCallback(
+    (next: ApiEvent) => {
+      setEvents((prev) => dedupeEvents(prev.map((event) => (event.id === next.id ? next : event))));
+    },
+    [dedupeEvents],
+  );
+
+  const loadEventResults = useCallback(
+    async (eventId: number) => {
+      if (!userId) return;
+      setIsEventLoading(true);
+      try {
+        const { event: eventPayload, matches, votes_summary, user_votes } = await fetchEventResults(
+          userId,
+          eventId,
+        );
+        updateEventList(eventPayload);
+        setLoadedEvent({
+          event: eventPayload,
+          matches,
+          votesSummary: votes_summary,
+          userVotes: user_votes,
+          preferences: mapPreferences(eventPayload.preferences),
+        });
+        navigateToScreen('eventDetails');
+      } catch {
+        toast.error('Unable to load event');
+      } finally {
+        setIsEventLoading(false);
+      }
+    },
+    [navigateToScreen, updateEventList, userId],
+  );
+
+  useEffect(() => {
+    if (currentScreen !== 'eventPending') return;
+    if (!loadedEvent || !userId) return;
+    if (['ready', 'completed'].includes(loadedEvent.event.status)) return;
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const pollProgress = async () => {
+      try {
+        const { event: latestEvent, progress } = await fetchEventProgress(userId, loadedEvent.event.id);
+        if (cancelled) return;
+
+        updateEventList(latestEvent);
+        setLoadedEvent((prev) =>
+          prev && prev.event.id === latestEvent.id
+            ? {
+                event: latestEvent,
+                progress,
+                preferences: mapPreferences(latestEvent.preferences),
+              }
+            : prev,
+        );
+
+        if (['ready', 'completed'].includes(latestEvent.status)) {
+          await loadEventResults(latestEvent.id);
+        }
+      } catch {
+        // swallow transient errors; next poll will retry
+      }
+    };
+
+    pollProgress();
+    intervalId = window.setInterval(pollProgress, 5000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [currentScreen, loadedEvent, loadEventResults, updateEventList, userId]);
+
+  const openEvent = useCallback(
+    async (event: ApiEvent) => {
+      if (!userId) return;
+      setIsEventLoading(true);
+      try {
+        if (event.status === 'ready' || event.status === 'completed') {
+          await loadEventResults(event.id);
+          return;
+        }
+
+        const { event: eventPayload, progress } = await fetchEventProgress(userId, event.id);
+        updateEventList(eventPayload);
+
+        if (eventPayload.status === 'ready' || eventPayload.status === 'completed') {
+          await loadEventResults(eventPayload.id);
+          return;
+        }
+
+        setLoadedEvent({
+          event: eventPayload,
+          progress,
+          preferences: mapPreferences(eventPayload.preferences),
+        });
+        navigateToScreen('eventPending');
+      } catch {
+        toast.error('Unable to load event');
+      } finally {
+        setIsEventLoading(false);
+      }
+    },
+    [loadEventResults, navigateToScreen, updateEventList, userId],
+  );
+
+  const handleInvitationSubmit = async (
+    pref: FriendPreference,
+    invitation: ApiInvitation,
+  ): Promise<void> => {
+    if (!userId) return;
+
+    try {
+      await submitPreference(
+        invitation.access_token,
+        {
+          available_times: pref.availableTimes,
+          activities: pref.activities,
+          budget_min: pref.budgetRange?.[0],
+          budget_max: pref.budgetRange?.[1],
+          ideas: pref.ideas,
+        },
+        userId,
+      );
+
+      const { event: eventPayload, progress } = await fetchEventProgress(userId, invitation.event.id);
+      const eventIsReady = ['ready', 'completed'].includes(eventPayload.status);
+      updateEventList(eventPayload);
+
+      toast.success('Preferences submitted!');
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitation.id));
+      setActiveInvitation(null);
+      if (eventIsReady) {
+        await refreshEvents();
+        await loadEventResults(eventPayload.id);
+        return;
+      }
+      setLoadedEvent({
+        event: eventPayload,
+        progress,
+        preferences: mapPreferences(eventPayload.preferences),
+      });
+      await refreshEvents();
+      navigateToScreen('eventPending');
+    } catch {
+      toast.error('Unable to submit preferences');
+    }
+  };
+
+  const handleVote = useCallback(
+    async (eventId: number, matchId: string | number, score: number) => {
+      if (!userId) return;
+      try {
+        await submitMatchVotes(userId, eventId, [{ match_id: matchId, score }]);
+        const { event: updatedEvent, matches, votes_summary, user_votes } = await fetchEventResults(
+          userId,
+          eventId,
+        );
+        setLoadedEvent({
+          event: updatedEvent,
+          matches,
+          votesSummary: votes_summary,
+          userVotes: user_votes,
+          preferences: mapPreferences(updatedEvent.preferences),
+        });
+        updateEventList(updatedEvent);
+      } catch {
+        toast.error('Unable to record your rating');
+      }
+    },
+    [updateEventList, userId],
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-sky-100 to-peach-100 flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-md md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[700px] md:min-h-[800px]
+relative">
+        {currentScreen === 'intro' && (
+          <IntroScreen onGetStarted={() => navigateToScreen('onboarding')} />
+        )}
+
+        {currentScreen === 'onboarding' && (
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
+        )}
+
+        {currentScreen === 'home' && (
+          <HomeScreen
+            userData={userData}
+            events={events}
+            invitations={invitations}
+            isNewUser={isNewUser}
+            loadingEvent={isEventLoading}
+            onCreateEvent={() => navigateToScreen('createEvent')}
+            onSelectEvent={openEvent}
+            onRespondToInvite={(inv) => {
+              setActiveInvitation(inv);
+              navigateToScreen('inviteResponse');
+            }}
+            onLogout={handleLogout}
+          />
+        )}
+
+        {currentScreen === 'createEvent' && (
+          <CreateEventScreen
+            onComplete={handleCreateEvent}
+            onBack={() => navigateToScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'inviteResponse' && (
+          activeInvitation && activeInvitation.event ? (
+            <FriendsSubmissionScreen
+              eventTitle={activeInvitation.event.title}
+              eventData={{}}
+              friendName={userData.name}
+              organizerName={activeInvitation.event.organizer?.name || 'Organizer'}
+              onSubmit={(pref) => handleInvitationSubmit(pref, activeInvitation)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 gap-3">
+              <div className="text-gray-500">Loading invitation...</div>
+              <button
+                onClick={() => navigateToScreen('home')}
+                className="px-4 py-2 rounded-xl border border-gray-200 hover:border-purple-300"
+              >
+                Go to Home
+              </button>
+            </div>
+          )
+        )}
+
+        {currentScreen === 'eventDetails' && loadedEvent && (
+          <EventDetailsScreen
+            event={loadedEvent.event}
+            matchResults={loadedEvent.matches || []}
+            preferences={loadedEvent.preferences || []}
+            votesSummary={loadedEvent.votesSummary}
+            userVotes={loadedEvent.userVotes}
+            onRate={(matchId, rating) => handleVote(loadedEvent.event.id, matchId, rating)}
+            onBack={() => {
+              navigateToScreen('home');
+              refreshEvents();
+            }}
+          />
+        )}
+
+        {currentScreen === 'eventPending' && loadedEvent && (
+          <EventPendingScreen
+            eventTitle={loadedEvent.event.title}
+            organizerName={loadedEvent.event.organizer?.name || userData.name}
+            progress={loadedEvent.progress || loadedEvent.event.progress || []}
+            onBack={() => {
+              navigateToScreen('home');
+              refreshEvents();
+            }}
+          />
+        )}
+      </div>
+      <Toaster position="top-center" richColors />
+    </div>
+  );
+}
+
+export default App;

@@ -104,7 +104,7 @@ class Event < ApplicationRecord
     if include_progress
       payload[:progress] = progress_snapshot
       payload[:submitted_count] = invitations.submitted.count
-      payload[:participant_count] = invitations.participant.count
+      payload[:participant_count] = invitations.participant.count + 1
     end
 
     if include_results
