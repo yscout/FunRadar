@@ -73,6 +73,8 @@ cd backend
 bundle exec cucumber                               # all stories (features/)
 bundle exec cucumber features/create_event.feature # specific feature
 bundle exec cucumber --format pretty               # readable output
+ENABLE_COVERAGE=true bundle exec cucumber          # with coverage output 
 ```
+
 
 Rerun ```bin/dev``` (or bin/rails server plus npm run build:watch) afterward if you need the server up while working through scenarios.
