@@ -1,93 +1,78 @@
 ﻿## FunRadar
 
-This is a code bundle for FunRadar App Design. Group members: Liang Song(ts3479), Mike Hu(yh3329), Wanting You(wy2470), Yutao Mao(ym3019). Heroku deployment: https://funradar-b8f29a7d90f1.herokuapp.com/
+This is a code bundle for FunRadar App Design. Group members: Liang Song (ts3479), Mike Hu (yh3329), Wanting You (wy2470), Yutao Mao (ym3019).
+Heroku deployment: https://funradar-b8f29a7d90f1.herokuapp.com/
 
 ## What’s our first proposal?
 
 FunRadar — Find fun, fast.
 
-FunRadar instantly finds fun things to do near you — from food and drinks to activities and events — personalized to your vibe, preferences, and location. You just tell it what you feel like doing, and it returns a curated list that feels handpicked for you.
+FunRadar instantly finds fun things to do near you — from food and drinks to activities and events — personalized to your vibe, preferences, and
+location. You just tell it what you feel like doing, and it returns a curated list that feels handpicked for you.
 
 ## What’s the additional problem we’re solving?
 
-As we dig deeper about the scenario, we find out that people usual don’t hangout alone, but hangout with their friends. What’s the more painful pain point is that different people have different preferences, like different personal interests, budget, schedule, and location. Some people say they are ok with everything but denied it every time a proposal is raised. 
+As we dig deeper about the scenario, we find out that people usually don’t hang out alone, but hang out with their friends. What’s more painful
+is that different people have different preferences, like interests, budget, schedule, and location. Some people say they are ok with everything
+but reject every proposal.
 
-In our solution, we designed the coordination process to make everyone fill in their preferences before our system recommends the activities.
+In our solution, we designed the coordination process so everyone fills in their preferences before the system recommends activities. This
+iteration focuses on the collaboration workflow; the next iteration will improve the recommendation system with real data via AI agents once
+every friend shares preferences.
 
-In this iteration, we designed and coded the collaboration process. In the next iteration, we will improve the recommendation system with real data using ai agents after collecting everyone’s preferences in this friend grouhp.
+## What's our App
 
-User stories are captured as Gherkin feature files under `backend/features/`, and RSpec specs all live in `backend/spec/`
+FunRadar has three major flows:
 
+- __Onboarding__ – a lightweight sign-in where users share their name and optionally grant location permission so future matches can be localized.
+- __Social planning__ – the home screen shows pending invites, ongoing events collecting preferences, and completed hangouts. Organizers can launch a new event by sharing availability, interests, budgets, and invitee names.
+- __Preference collection + AI matching__ – each invitee fills in their availability/activities/budget before seeing AI-generated matches. Once all invitees submit, we run AI matching, surface recommended activities, and let everyone rate them until a final plan is chosen.
 
-## Run the Tests
+## How to Run It on Local Device
 
-### Run All RSpec Tests(141 examples)
+1. Install dependencies
 ```bash
 cd backend
 bundle install
-bundle exec rspec
+npm install
 ```
-
-### Run a Specific Test File
+2. Configure environment
+- Copy `.env.example` to `.env` if present (or export manually).
+- Set `OPENAI_KEY` to a valid API key so AI matchmaking works:
 ```bash
-bundle exec rspec spec/models/user_spec.rb
+export OPENAI_KEY=sk-your-key-here
 ```
-
-### Run RSpec with Detailed Output
+- Optionally set `PORT` (defaults to 3000).
+3. Prepare the database
 ```bash
-bundle exec rspec --format documentation
+bin/rails db:setup
 ```
-
-### Run All Cucumber Tests(53 scenarios)
+4. Run the app
 ```bash
-bundle exec cucumber
+bin/dev
 ```
 
-### Run a Specific Feature
+This runs foreman with `Procfile.dev`, launching both ```bin/rails``` server and ```npm run build:watch``` so backend and React builds stay in sync.
+
+5. Visit http://localhost:3000 to use the app.
+
+## How to run RSpec
+
 ```bash
-bundle exec cucumber features/create_event.feature
+cd backend
+bundle exec rspec              # run the full suite
+bundle exec rspec spec/models/user_spec.rb          # single file
+bundle exec rspec --format documentation             # verbose output
 ```
 
-### Run Cucumber with Detailed Output
+## How to run User Story
+
+Cucumber features encode our user stories.
 ```bash
-bundle exec cucumber --format pretty
+cd backend
+bundle exec cucumber                               # all stories (features/)
+bundle exec cucumber features/create_event.feature # specific feature
+bundle exec cucumber --format pretty               # readable output
 ```
 
-## Test Coverage
-
-### RSpec (148 examples, 100% passing)
-- **Model Tests**: 90 examples
-  - User: 16 tests
-  - Event: 30 tests
-  - Invitation: 24 tests
-  - Preference: 20 tests
-  
-- **Service Tests**: 15 examples
-  - AI::GroupMatchService: 15 tests
-  
-- **Request Tests**: 43 examples
-  - Events API: 19 tests
-  - Invitations API: 6 tests
-  - Preferences API: 11 tests
-  - User API: 4 tests
-  - Session API: 3 tests
-
-### Cucumber (53 scenarios, 100% core features passing)
-- Create Event: 9 scenarios
-- Submit Preferences: 13 scenarios
-- AI Matching: 14 scenarios
-- View Events: 8 scenarios
-- User Management: 5 scenarios
-- Event Collaboration: 4 scenarios
-
-### How our project work
-Our project is currently divided into three sections: onboarding/social matching/recommendations.
-
-First, users can type their name and share the access of their location.
-
-After they enter the main pages, they may see some upcoming events that have already matched with their friends(our engine will recommend these events first based on their availability/shared interests), or events that are pending(waiting invitee to accept).
-
-They can also start a new event with their friends by clicking "start a new event". There they will input their availbility/things they are interested in/budgets, and we will base on their current preference and saved preference to recommend them with a list of events and friends that are possibly also interested in this events, and then they can send invitations to these friends.
-
-After their friends log in and see the invitation, they can also input their preferences and rank these events. If 5 people agree with a certain event, the status will change from "pending" to "complete" and will be added to the schedule.
-
+Rerun ```bin/dev``` (or bin/rails server plus npm run build:watch) afterward if you need the server up while working through scenarios.
