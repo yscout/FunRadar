@@ -37,4 +37,13 @@ Feature: AI Activity Suggestions Job Processing
     Then the event should not be marked as ready
     And no activity suggestions should be created
 
+  Scenario: Job regenerates suggestions and clears previous votes
+    Given "Alice" creates an event "City Tour"
+    And "Bob" and "Charlie" are invited
+    And all participants submit their preferences
+    And the event currently has stored votes
+    And the AI service will return sample matches
+    When the job is processed
+    Then AI-generated activity suggestions should exist
+    And previous votes should be cleared
 

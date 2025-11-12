@@ -1,8 +1,18 @@
+require 'securerandom'
+
 # http request helpers
 def json_post(path, body)
   headers = {'CONTENT_TYPE' => 'application/json'}
   headers['HTTP_X_USER_ID'] = @current_user.id.to_s if @current_user
-  
+
+  if @invitation_token
+    path = path.gsub(':token', @invitation_token)
+    path = path.gsub(':invitation_token', @invitation_token)
+  end
+  path = path.gsub(':share_token', @share_token) if @share_token
+  path = path.gsub(':event_id', @created_event.id.to_s) if @created_event
+  path = path.gsub(':user_id', @current_user.id.to_s) if @current_user
+
   post path, body.to_json, headers
   @last_response_status = last_response.status
   @last_response_body = last_response.body
@@ -12,7 +22,15 @@ end
 def json_get(path)
   headers = {}
   headers['HTTP_X_USER_ID'] = @current_user.id.to_s if @current_user
-  
+
+  if @invitation_token
+    path = path.gsub(':token', @invitation_token)
+    path = path.gsub(':invitation_token', @invitation_token)
+  end
+  path = path.gsub(':share_token', @share_token) if @share_token
+  path = path.gsub(':event_id', @created_event.id.to_s) if @created_event
+  path = path.gsub(':user_id', @current_user.id.to_s) if @current_user
+
   get path, {}, headers
   @last_response_status = last_response.status
   @last_response_body = last_response.body
@@ -22,7 +40,15 @@ end
 def json_patch(path, body)
   headers = {'CONTENT_TYPE' => 'application/json'}
   headers['HTTP_X_USER_ID'] = @current_user.id.to_s if @current_user
-  
+
+  if @invitation_token
+    path = path.gsub(':token', @invitation_token)
+    path = path.gsub(':invitation_token', @invitation_token)
+  end
+  path = path.gsub(':share_token', @share_token) if @share_token
+  path = path.gsub(':event_id', @created_event.id.to_s) if @created_event
+  path = path.gsub(':user_id', @current_user.id.to_s) if @current_user
+
   patch path, body.to_json, headers
   @last_response_status = last_response.status
   @last_response_body = last_response.body
@@ -173,6 +199,13 @@ Then('the user location should be saved') do
   expect(@current_user.location_longitude).to be_present
 end
 
+Then('the organizer preference should be persisted') do
+  expect(@created_event).to be_present
+  organizer_invitation = @created_event.invitations.organizer.first
+  expect(organizer_invitation&.preference).to be_present
+  expect(organizer_invitation.preference.activities).not_to be_empty
+end
+
 # Setup steps for scenarios
 Given('I have created {int} events') do |count|
   count.times do |i|
@@ -195,40 +228,39 @@ Given('I have an event {string}') do |title|
   @created_event = create(:event, title: title, organizer: @current_user)
   org_inv = create(:invitation, event: @created_event, invitee: @current_user, role: :organizer, status: :submitted)
   create(:preference, invitation: org_inv)
+  @event = @created_event
 end
 
 Given('{string} is invited with token {string}') do |name, token|
   unless @event
-    organizer = @current_user || User.find_or_create_by!(name: 'TestOrganizer')
+    organizer = User.find_or_create_by!(name: 'TestOrganizer')
     @event = create(:event, organizer: organizer)
     org_inv = create(:invitation, event: @event, invitee: organizer, role: :organizer, status: :submitted)
     create(:preference, invitation: org_inv)
   end
-  
-  user = User.find_or_create_by(name: name)
-  @invitation_token = token
-  @test_invitation = create(:invitation, 
-    event: @event, 
+
+  @invitation_token = normalized_token(token)
+  @test_invitation = create(:invitation,
+    event: @event,
     invitee_name: name,
-    access_token: token,
+    access_token: @invitation_token,
     role: :participant
   )
 end
 
 Given('{string} is invited with token {string} and has submitted preferences') do |name, token|
   unless @event
-    organizer = @current_user || User.find_or_create_by!(name: 'TestOrganizer')
+    organizer = User.find_or_create_by!(name: 'TestOrganizer')
     @event = create(:event, organizer: organizer)
     org_inv = create(:invitation, event: @event, invitee: organizer, role: :organizer, status: :submitted)
     create(:preference, invitation: org_inv)
   end
-  
-  user = User.find_or_create_by(name: name)
-  @invitation_token = token
+
+  @invitation_token = normalized_token(token)
   invitation = create(:invitation,
     event: @event,
     invitee_name: name,
-    access_token: token,
+    access_token: @invitation_token,
     role: :participant,
     status: :submitted
   )
@@ -269,3 +301,18 @@ Given('AI has generated matches') do
   create(:activity_suggestion, event: @created_event)
 end
 
+Given('I store the event share token') do
+  event = @created_event || @event
+  @share_token = event&.share_token
+  expect(@share_token).to be_present
+end
+
+Given('I sign out') do
+  @current_user = nil
+end
+def normalized_token(raw_token)
+  uuid_regex = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
+  return raw_token if raw_token.match?(uuid_regex)
+
+  SecureRandom.uuid
+end

@@ -1,3 +1,15 @@
+def preference_attributes_from_table(prefs)
+  {
+    available_times: prefs['available_times']&.split(', ') || [],
+    activities: prefs['activities']&.split(', ') || [],
+    budget_min: prefs['budget_min']&.to_i,
+    budget_max: prefs['budget_max']&.to_i,
+    ideas: prefs['ideas'],
+    location_latitude: prefs['location_latitude']&.to_f,
+    location_longitude: prefs['location_longitude']&.to_f
+  }.compact
+end
+
 Given('the following friends are invited:') do |table|
   @invited_participants = []
   table.raw.flatten.each do |friend_name|
@@ -19,14 +31,8 @@ Given('the organizer {string} has submitted preferences:') do |name, table|
   )
   
   prefs = table.rows_hash
-  create(:preference,
-    invitation: organizer_invitation,
-    available_times: prefs['available_times'].split(', '),
-    activities: prefs['activities'].split(', '),
-    budget_min: prefs['budget_min'].to_i,
-    budget_max: prefs['budget_max'].to_i,
-    ideas: prefs['ideas']
-  )
+  attrs = preference_attributes_from_table(prefs)
+  create(:preference, attrs.merge(invitation: organizer_invitation))
 end
 
 Given('{string} has submitted preferences:') do |name, table|
@@ -34,15 +40,8 @@ Given('{string} has submitted preferences:') do |name, table|
   invitation ||= @event.invitations.find_or_create_by!(invitee_name: name, role: :participant)
   
   prefs = table.rows_hash
-  create(:preference,
-    invitation: invitation,
-    available_times: prefs['available_times'].split(', '),
-    activities: prefs['activities'].split(', '),
-    budget_min: prefs['budget_min'].to_i,
-    budget_max: prefs['budget_max'].to_i,
-    ideas: prefs['ideas']
-  )
-  
+  attrs = preference_attributes_from_table(prefs)
+  create(:preference, attrs.merge(invitation: invitation))
   invitation.mark_submitted!
 end
 
@@ -66,25 +65,14 @@ end
 
 When('I submit my preferences:') do |table|
   prefs = table.rows_hash
-  @submitted_preference = create(:preference,
-    invitation: @invitation,
-    available_times: prefs['available_times'].split(', '),
-    activities: prefs['activities'].split(', '),
-    budget_min: prefs['budget_min'].to_i,
-    budget_max: prefs['budget_max'].to_i,
-    ideas: prefs['ideas']
-  )
+  attrs = preference_attributes_from_table(prefs)
+  @submitted_preference = create(:preference, attrs.merge(invitation: @invitation))
 end
 
 When('I update my preferences:') do |table|
   prefs = table.rows_hash
-  @my_preference.update(
-    available_times: prefs['available_times'].split(', '),
-    activities: prefs['activities'].split(', '),
-    budget_min: prefs['budget_min'].to_i,
-    budget_max: prefs['budget_max'].to_i,
-    ideas: prefs['ideas']
-  )
+  attrs = preference_attributes_from_table(prefs)
+  @my_preference.update(attrs)
 end
 
 When('I submit my preferences with invalid budget:') do |table|
@@ -281,4 +269,3 @@ Then('{string} should show {int} votes') do |item, votes|
   # Check in the time tallies
   expect(@time_tallies[item]).to eq(votes)
 end
-

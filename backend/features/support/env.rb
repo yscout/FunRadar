@@ -4,22 +4,43 @@
 # instead of editing this one. Cucumber will automatically load all features/**/*.rb
 # files.
 
-require 'cucumber/rails'
-require 'rspec/rails'
+coverage_setting = ENV.fetch("CUCUMBER_ENABLE_COVERAGE", ENV.fetch("ENABLE_COVERAGE", "true"))
 
-# Load SimpleCov for coverage (without full RSpec configuration)
-if ENV["ENABLE_COVERAGE"] == "true"
-  require 'simplecov'
-  SimpleCov.start 'rails' do
+if coverage_setting == "true"
+  require "simplecov"
+  require "simplecov-console"
+
+  SimpleCov.command_name "cucumber"
+  SimpleCov.load_profile "rails"
+  SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::Console
+  ])
+
+  SimpleCov.start do
+    enable_coverage :branch
     add_filter '/spec/'
     add_filter '/test/'
     add_filter '/config/'
     add_filter '/vendor/'
+    add_filter '/app/mailers/'
     add_group 'Controllers', 'app/controllers'
     add_group 'Models', 'app/models'
     add_group 'Services', 'app/services'
   end
+
+  SimpleCov.at_exit do
+    result = SimpleCov.result
+    covered = result.covered_lines
+    total = result.total_lines
+    percentage = total.zero? ? 0.0 : ((covered.to_f / total) * 100).round(2)
+    puts format("\nCucumber coverage: %.2f%% covered: %d/%d\n", percentage, covered, total)
+    result.format!
+  end
 end
+
+require 'cucumber/rails'
+require 'rspec/rails'
 
 # Capybara defaults to CSS3 selectors rather than XPath.
 # If you'd prefer to use XPath, just uncomment this line and adjust any
@@ -104,4 +125,3 @@ After do
     RSpec::Mocks.teardown
   end
 end
-

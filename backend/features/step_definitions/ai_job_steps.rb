@@ -78,6 +78,15 @@ Given('the AI service will return empty matches') do
   allow_any_instance_of(Ai::GroupMatchService).to receive(:call).and_return([])
 end
 
+Given('the AI service will return sample matches') do
+  allow_any_instance_of(Ai::GroupMatchService).to receive(:call).and_return(
+    [
+      { 'id' => 'match_1', 'title' => 'Sample One', 'compatibility' => 90, 'image' => 'img', 'location' => 'City', 'price' => '$20', 'time' => 'Sat', 'emoji' => '🎉', 'votes' => 0, 'description' => 'Fun plan' },
+      { 'id' => 'match_2', 'title' => 'Sample Two', 'compatibility' => 80, 'image' => 'img2', 'location' => 'Town', 'price' => '$30', 'time' => 'Sun', 'emoji' => '🎲', 'votes' => 0, 'description' => 'Board games' }
+    ]
+  )
+end
+
 Given('the event has existing votes from a previous round') do
   @event.update!(status: :ready)
   suggestion = create(:activity_suggestion, event: @event)
@@ -86,6 +95,16 @@ Given('the event has existing votes from a previous round') do
     invitation: @invitation1,
     match_id: 'old_match_1',
     score: 5
+  )
+end
+
+Given('the event currently has stored votes') do
+  invitation = @event.invitations.participant.first || create(:invitation, event: @event, role: :participant, invitee_name: 'Temp Friend')
+  @existing_vote = create(:match_vote,
+    event: @event,
+    invitation: invitation,
+    match_id: 'legacy_match',
+    score: 4
   )
 end
 
@@ -210,4 +229,3 @@ end
 Then('the event should still be {string}') do |status|
   expect(@event.status).to eq(status)
 end
-

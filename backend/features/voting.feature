@@ -65,3 +65,26 @@ Feature: Event Voting
     Then Charlie should see an error "Forbidden"
     And the response status should be 403
 
+  Scenario: Event completes after everyone votes
+    Given "Alice" has organized an event "Final Choice"
+    And "Bob" and "Charlie" are invited to the event
+    And "Bob" has submitted preferences
+    And "Charlie" has submitted preferences
+    And AI has generated activity suggestions
+    When "Alice" votes on the suggestions with scores:
+      | match_id | score |
+      | match_1  | 5     |
+      | match_2  | 4     |
+      | match_3  | 3     |
+    And "Bob" votes on the suggestions with scores:
+      | match_id | score |
+      | match_1  | 5     |
+      | match_2  | 4     |
+      | match_3  | 3     |
+    And "Charlie" votes on the suggestions with scores:
+      | match_id | score |
+      | match_1  | 5     |
+      | match_2  | 4     |
+      | match_3  | 3     |
+    Then the event should be completed after voting
+    And the event final match should be stored

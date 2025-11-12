@@ -106,20 +106,24 @@ Then('my invitations should reflect the new name') do
 end
 
 Then('my location should be saved') do
+  @current_user.reload
   expect(@current_user.location_latitude).to be_present
   expect(@current_user.location_longitude).to be_present
 end
 
 Then('location permission should be enabled') do
+  @current_user.reload
   expect(@current_user.location_permission).to be true
 end
 
 Then('my location should be cleared') do
+  @current_user.reload
   expect(@current_user.location_latitude).to be_nil
   expect(@current_user.location_longitude).to be_nil
 end
 
 Then('location permission should be disabled') do
+  @current_user.reload
   expect(@current_user.location_permission).to be false
 end
 
@@ -172,6 +176,6 @@ Then('the location field should be null') do
 end
 
 Then('location_permission should be false') do
+  @current_user.reload
   expect(@api_response[:location_permission]).to be false
 end
-

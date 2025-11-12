@@ -73,9 +73,12 @@ cd backend
 bundle exec cucumber                               # all stories (features/)
 bundle exec cucumber features/create_event.feature # specific feature
 bundle exec cucumber --format pretty               # readable output
-ENABLE_COVERAGE=true bundle exec cucumber          # with coverage output 
+
+CUCUMBER_ENABLE_COVERAGE=false bundle exec cucumber # disable coverage if needed
 ```
 
 Rerun ```bin/dev``` (or bin/rails server plus npm run build:watch) afterward if you need the server up while working through scenarios.
 
-Line Coverage: 94.84% (386 / 407)
+97 scenarios (97 passed)
+611 steps (611 passed)
+Line Coverage: 97.26% (390 / 401)

@@ -29,6 +29,33 @@ Feature: User Management
     Then my location should be cleared
     And location permission should be disabled
 
+  Scenario: Update location via API
+    Given I am a registered user named "Alice"
+    When I PATCH "/api/users/:user_id" with JSON:
+      """
+      {
+        "user": {
+          "location_permission": true,
+          "location_latitude": 40.7128,
+          "location_longitude": -74.0060
+        }
+      }
+      """
+    Then the response status should be 200
+    And my location should be saved
+    And location permission should be enabled
+    When I PATCH "/api/users/:user_id" with JSON:
+      """
+      {
+        "user": {
+          "location_permission": false
+        }
+      }
+      """
+    Then the response status should be 200
+    And my location should be cleared
+    And location permission should be disabled
+
   Scenario: Claim pending invitations
     Given I am invited to 3 events as "Alice"
     When I create an account with name "Alice"
@@ -66,4 +93,3 @@ Feature: User Management
     When I view my profile API response
     Then the location field should be null
     And location_permission should be false
-

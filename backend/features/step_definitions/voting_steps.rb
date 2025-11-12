@@ -179,5 +179,16 @@ Then('Charlie should see an error {string}') do |error_message|
   expect(@last_response_json['error']).to eq(error_message)
 end
 
-# Use the existing step from api_controller_steps.rb
+Then('the event should be completed after voting') do
+  @event.reload
+  expect(@event.status).to eq('completed')
+  expect(@event.completed_at).to be_present
+end
 
+Then('the event final match should be stored') do
+  @event.reload
+  expect(@event.final_match).to be_present
+  expect(@event.final_match).to have_key('id')
+end
+
+# Use the existing step from api_controller_steps.rb

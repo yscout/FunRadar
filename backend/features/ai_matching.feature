@@ -109,3 +109,45 @@ Feature: AI Activity Matching
     Then the event status should be "collecting"
     And no AI suggestions should be available yet
 
+  Scenario: AI service processes preferences with stubbed client
+    Given an event "AI Coverage" exists organized by "Alice"
+    And the following friends are invited:
+      | Bob |
+    And the organizer "Alice" has submitted preferences:
+      | available_times   | Friday 6:00 PM |
+      | activities        | Dinner         |
+      | budget_min        | 20             |
+      | budget_max        | 60             |
+      | ideas             | Prefer indoors |
+      | location_latitude | 40.7128        |
+      | location_longitude| -74.0060       |
+    And "Bob" has submitted preferences:
+      | available_times | Friday 7:00 PM |
+      | activities      | Drinks         |
+      | budget_min      | 15             |
+      | budget_max      | 50             |
+      | ideas           | Somewhere new  |
+    And user "Bob" has location coordinates:
+      | latitude  | 34.0522 |
+      | longitude | -118.2437 |
+    And the AI client returns a valid JSON response
+    When I run the AI group match service
+    Then the AI service should return structured matches
+
+  Scenario: AI service falls back on invalid JSON
+    Given an event "AI Coverage" exists organized by "Alice"
+    And the organizer "Alice" has submitted preferences:
+      | available_times | Saturday 3:00 PM |
+      | activities      | Picnic           |
+      | budget_min      | 10               |
+      | budget_max      | 30               |
+      | ideas           | Bring blankets   |
+    And the AI client returns an invalid JSON response
+    When I run the AI group match service
+    Then the AI service should fall back to default matches
+
+  Scenario: AI service falls back when no preferences exist
+    Given an event "Empty Event" exists organized by "Alice"
+    And no preferences have been submitted for the event
+    When I run the AI group match service
+    Then the AI service should fall back to default matches
