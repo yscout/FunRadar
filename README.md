@@ -76,5 +76,6 @@ bundle exec cucumber --format pretty               # readable output
 ENABLE_COVERAGE=true bundle exec cucumber          # with coverage output 
 ```
 
-
 Rerun ```bin/dev``` (or bin/rails server plus npm run build:watch) afterward if you need the server up while working through scenarios.
+
+Line Coverage: 94.84% (386 / 407)
