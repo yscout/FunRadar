@@ -18,8 +18,6 @@ Rails.application.configure do
   # Enable serving static files from the `public` folder (required for serving React app)
   config.public_file_server.enabled = true
   
-  # Cache assets for far-future expiry since Vite adds content hashes to filenames.
-  # HTML files are served via fallback_index_html which has no-cache headers.
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.

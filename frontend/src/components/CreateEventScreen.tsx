@@ -328,7 +328,7 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                       type="text"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="Enter friend's email"
+                      placeholder="Enter friend's username"
                       className="flex-1 h-12 md:h-14 px-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none md:text-lg"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
@@ -347,7 +347,7 @@ export function CreateEventScreen({ onComplete, onBack }: CreateEventScreenProps
                   <div className="bg-purple-50 rounded-xl p-4 md:p-6">
                     <div className="text-sm md:text-base text-purple-700 mb-2 md:mb-3">Quick Add</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                      {['Sarah Chen', 'Mike Johnson', 'Emma Davis', 'Alex Kim'].map((friend) => (
+                      {['Sarah Smith', 'Mike Johnson', 'Emma Davis', 'Alex Kim'].map((friend) => (
                         <button
                           key={friend}
                           onClick={() => {

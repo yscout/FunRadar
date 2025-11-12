@@ -11,7 +11,7 @@ class GenerateActivitySuggestionsJob < ApplicationJob
 
     ActiveRecord::Base.transaction do
       event.match_votes.destroy_all
-      event.activity_suggestions.create!(payload: matches, model_name: "gpt-5-mini")
+      event.activity_suggestions.create!(payload: matches)
       event.update!(
         status: :ready,
         ai_generated_at: Time.current,

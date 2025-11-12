@@ -205,7 +205,7 @@ center justify-center text-2xl md:text-3xl flex-shrink-0">
                         <div className="flex items-center gap-3 text-sm md:text-base text-gray-500 mt-1">
                           <div className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
-                            {responded}/{total} responded
+                            {responded}/{responded} responded
                           </div>
                         </div>
                       </div>
