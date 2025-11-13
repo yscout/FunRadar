@@ -31,11 +31,15 @@ FunRadar has three major flows:
 
 4. After log in their account, you will see a notice of invitation. Click "respond", and you can see the details of event you just made. It is your time to share your preference as well! You can also type in and choose your availability/preference/budgets/specific ideas and click submit.
 
-5. After your response, you will see an event detail page which lists activities all people who have be invited(e.g pending/responded). Wait for some seconds, our AI recommendation system is working and calculating events that you guys all may like based on all information provided! You can go back to home page and refresh, then you will see ths status of event changed from "AI matching" to "matched", and you will see the recommendation accordingly.
+5. After your response, you will see an event detail page which lists activities all people who have be invited(e.g pending/responded). WAIT FOR SOME SECONDS, our AI recommendation system is working and calculating events that you guys all may like based on all information provided! Please wait for some time (like 10-20s, depending the amount of info you provided), and then you will see ths status of event changed from "AI matching" to "matched", and you will see the recommendation accordingly.
 
 6. Now, every participant of the same event will see the SAME page of AI recommendations. It is a list of recommended events from AI. Everyone(you and other invitees) can rate each event from 1 star to 5 stars! After all participants rated the events, you can select the one with the highest score from all raters, and can accordingly add this event to everyone's calendars on home page
 
 WARNING: If you test locally, the AI recommendation system is not working as we haven't export OPENAI KEY for your local environment. However, if tested through the link of heroku website, the AI recommendation system is working! We have exported OPENAI KEY on heroku!
+
+<img width="490" height="390" alt="3201762995066_ pic" src="https://github.com/user-attachments/assets/07041ed0-5bfd-4be6-abdb-5d4058aba7f7" />
+<img width="490" height="390" alt="3211762995066_ pic" src="https://github.com/user-attachments/assets/755b7cc9-0218-485c-a5b6-a618ee88876e" />
+<img width="720" height="430" alt="3231762995642_ pic_hd" src="https://github.com/user-attachments/assets/82752f24-ec34-45f6-82a6-32b627a75347" />
 
 ## How to Run It on Local Device
 
@@ -98,4 +102,5 @@ Cucumber Tests (User Stories/BDD): we have 97 scenarios (97 passed) and 611 step
 Coverage Metrics:
 1. Line Coverage: 98.71% (382 / 387 lines)
 2. Branch Coverage: 88.79% (103 / 116 branches)
+
 ```
