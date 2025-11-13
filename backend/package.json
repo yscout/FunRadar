@@ -2,8 +2,7 @@
   "name": "funradar-rails",
   "private": true,
   "scripts": {
-    "build": "echo 'assets already built' && exit 0",
-    "build:original": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --loader:.ts=ts --loader:.tsx=tsx --loader:.css=css --outdir=app/assets/builds --public-path=/assets",
+    "build": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --loader:.ts=ts --loader:.tsx=tsx --loader:.css=css --outdir=app/assets/builds --public-path=/assets",
     "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --loader:.ts=ts --loader:.tsx=tsx --loader:.css=css --outdir=app/assets/builds --public-path=/assets --watch"
   },
   "devDependencies": {
