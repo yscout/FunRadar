@@ -2,7 +2,7 @@
   "name": "funradar",
   "version": "1.0.0",
   "scripts": {
-    "heroku-postbuild": "cd backend && yarn install --production=false && bundle exec rails assets:precompile",
+    "heroku-postbuild": "cd backend && npm install --production=false && bundle exec rails assets:precompile",
     "start": "cd backend && bundle exec rails server -p $PORT"
   }
 }
